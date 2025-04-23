@@ -1,0 +1,50 @@
+﻿@using System.Globalization
+@model IEnumerable<FinancialTransactionView>
+
+@* @{ *@
+@*     Layout = null; *@
+@* } *@
+
+@* <!DOCTYPE html> *@
+@* *@
+@* <html lang="en"> *@
+@* <head> *@
+@*     <title>Financial Transactions</title> *@
+@* </head> *@
+
+@{
+    ViewData["Title"] = "Financial Transactions";
+}
+
+<body>
+<a href="@Url.Action("Add", "FinancialTransactions")">Add</a>
+<a href="@Url.Action("Import", "FinancialTransactions")">Import</a>
+<table>
+    <caption>Financial Transactions</caption>
+    <thead>
+    <tr>
+        <th>Date</th>
+        <th>Description</th>
+        <th>Amount</th>
+        <th>Balance</th>
+        <th>Category</th>
+        <th></th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var t in Model)
+    {
+        <tr>
+            <td>@t.FinancialTransaction.PostedOn.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td>
+            <td>@t.FinancialTransaction.Description</td>
+            <td>@t.FinancialTransaction.Amount.ToString("C", CultureInfo.InvariantCulture)</td>
+            <td>@t.Balance.ToString("C", CultureInfo.InvariantCulture)</td>
+            <td></td>
+            <td><a href="@Url.Action("Remove")" hx-post="@Url.Action("Remove", t.FinancialTransaction.Id)">Remove</a></td>
+        </tr>
+    }
+    </tbody>
+</table>
+</body>
+@* </html> *@

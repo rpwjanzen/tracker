@@ -1,0 +1,29 @@
+﻿@model Tracker.Domain.Account
+
+@* @{ *@
+@*     Layout = null; *@
+@* } *@
+@* *@
+@* <!DOCTYPE html> *@
+@* *@
+@* <html lang="en"> *@
+@* <head> *@
+@*     <title>Add Account</title> *@
+@* </head> *@
+@* <body> *@
+@{
+    ViewData["Title"] = "Add Account";
+    Layout = null;
+}
+
+<form method="post" action="@Url.Action("Add")" id="account-add-form">
+    <label>Name<input required="required" name="name"/></label>
+    <label>Category<select name="category">
+        <option value="1" selected="selected">Debit</option>
+        <option value="2">Credit</option>
+    </select></label>
+    <!-- TODO: update the list of accounts as well -->
+    <button type="submit" hx-post="@Url.Action("Add")" hx-swap="outerHTML" hx-target="#account-add-form">Add</button>
+</form>
+@* </body> *@
+@* </html> *@

@@ -1,0 +1,24 @@
+﻿@model Tracker.Controllers.FileUploadModel
+
+@* @{ *@
+@*     Layout = null; *@
+@* } *@
+
+@{
+    ViewData["Title"] = "Import Financial Transactions";
+}
+@* <!DOCTYPE html> *@
+@* *@
+@* <html lang="en"> *@
+@* <head> *@
+@*     <title>Upload BMO JSON response</title> *@
+@* </head> *@
+@* <body> *@
+@* <div> *@
+<form asp-controller="FinancialTransactions" asp-action="Import" method="post" enctype="multipart/form-data">
+    <input type="file" asp-for="File" />
+    <button type="submit">Upload</button>
+</form>  
+@* </div> *@
+@* </body> *@
+@* </html> *@
