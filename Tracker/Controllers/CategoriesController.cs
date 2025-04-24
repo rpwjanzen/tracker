@@ -17,6 +17,6 @@ public class CategoriesController: Controller
     [HttpGet]
     public IActionResult Index()
     {
-        return View(_fetchCategories.Handle(new FetchCategoriesQuery()));
+        return PartialView("_Index", _fetchCategories.Handle(new FetchCategoriesQuery()));
     }
 }

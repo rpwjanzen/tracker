@@ -1,23 +1,10 @@
 ﻿@model IEnumerable<Tracker.Domain.Account>
 
-@* @{ *@
-@*     Layout = null; *@
-@* } *@
-
-@* <!DOCTYPE html> *@
-@* *@
-@* <html lang="en"> *@
-@* <head> *@
-@*     <title>Accounts</title> *@
-@* </head> *@
-@* <body> *@
-
 @{
     ViewData["Title"] = "Accounts";
 }
 
-<partial name="_AddAccount"/>
-@* <a href="@Url.Action("Add")" hx-boost="true" hx-get="@Url.Action("Add")" hx-swap="outerHTML">Add</a> *@
+<partial name="_AddLink"/>
 <table>
     <caption>Accounts</caption>
     <thead>

@@ -1,25 +1,11 @@
 ﻿@model IEnumerable<Tracker.Domain.Category>
-
-@* @{ *@
-@*     Layout = null; *@
-@* } *@
-
-@* <!DOCTYPE html> *@
-@* *@
-@* <html lang="en"> *@
-@* <head> *@
-@*     <title>Categories</title> *@
-@* </head> *@
-@* <body> *@
 @{
     ViewData["Title"] = "Categories";
 }
-
 <table>
     <caption>Categories</caption>
     <thead>
     <tr>
-        <th>Id</th>
         <th>Name</th>
     </tr>
     </thead>
@@ -27,11 +13,8 @@
     @foreach (var category in Model)
     {
         <tr>
-            <td>@category.Id</td>
             <td>@category.Name</td>
         </tr>
     }
     </tbody>
 </table>
-@* </body> *@
-@* </html> *@

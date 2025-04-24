@@ -1,0 +1,20 @@
+﻿@model Tracker.Domain.FinancialTransaction
+
+@{
+    ViewData["Title"] = "Add Financial Transaction";
+}
+
+<div class="box">
+    <strong class="block titlebar">Add Transaction</strong>
+    <form action="@Url.Action("Add")" method="post" hx-target="#main" class="table rows">
+        <label for="postedOn">Posted On</label>
+        <input type="date" required="required" name="postedOn" id="postedOn" value="@DateTime.Now.ToString("yyyy-MM-dd")" autofocus="autofocus"/>
+        
+        <label for="description">Description</label>
+        <input required="required" name="description" id="description"/>
+        
+        <label for="amount">Amount</label>
+        <input type="number" step="0.01" placeholder="0.00" name="amount" id="amount"/>
+        <button>Add Transaction</button>
+    </form>
+</div>

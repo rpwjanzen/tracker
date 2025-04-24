@@ -20,13 +20,13 @@ public class AccountsController: Controller
     [HttpGet]
     public IActionResult Index()
     {
-        return View(_fetchAccounts.Handle(new FetchAccountsQuery()));
+        return PartialView("_Index", _fetchAccounts.Handle(new FetchAccountsQuery()));
     }
 
     [HttpGet]
     public IActionResult Add()
     {
-        return View(Account.Empty);
+        return PartialView("_Add", Account.Empty);
     }
 
     [HttpPost]

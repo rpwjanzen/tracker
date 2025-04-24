@@ -44,13 +44,13 @@ public class FinancialTransactionsController: Controller
                 Balance = balance
             });
         }
-        return View(transactionViews);
+        return PartialView("_Index", transactionViews);
     }
 
     [HttpGet]
     public IActionResult Add()
     {
-        return View();
+        return PartialView("_Add");
     }
     
     [HttpPost]
@@ -63,7 +63,7 @@ public class FinancialTransactionsController: Controller
 
     public IActionResult Import()
     {
-        return View();
+        return PartialView("_Import");
     }
 
     [HttpDelete]

@@ -1,0 +1,19 @@
+﻿@model Tracker.Domain.Account
+@{
+    ViewData["Title"] = "Add Account";
+}
+<div class="box" id="account-add-box">
+    <strong class="block titlebar">Add Account</strong>
+    <form class="table rows">
+        <label for="name">Name</label>
+        <input required="required" name="name" id="name" placeholder="Name"/>
+        
+        <label for="category">Category</label>
+        <select name="category" id="category">
+            <option value="1" selected="selected">Debit</option>
+            <option value="2">Credit</option>
+        </select>
+    </form>
+    <!-- TODO: update the list of accounts as well -->
+    <a hx-post="@Url.Action("Add")" hx-swap="outerHTML" hx-target="#account-add-box" >Add</a>
+</div>
