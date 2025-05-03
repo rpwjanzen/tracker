@@ -10,6 +10,7 @@
       <PackageReference Include="Dapper" Version="2.1.66" />
       <PackageReference Include="Htmx" Version="1.8.1" />
       <PackageReference Include="Htmx.TagHelpers" Version="1.8.1" />
+      <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
       <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.4" />
       <PackageReference Include="SimpleInjector" Version="5.5.0" />
       <PackageReference Include="SimpleInjector.Integration.AspNetCore.Mvc" Version="5.5.0" />

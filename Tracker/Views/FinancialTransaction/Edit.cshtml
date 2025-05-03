@@ -1,0 +1,17 @@
+﻿@model Tracker.Domain.FinancialTransaction
+<tr hx-trigger='cancel' class='editing' hx-get="@Url.Action(null, new { id = Model.Id })">
+    <td><input autofocus name='postedOn' value='@Model.PostedOn.ToString("yyyy-MM-dd")'></td>
+    <td><input name='description' value='@Model.Description'></td>
+    <td><input name='amount' value='@Model.Amount.ToString("C")'></td>
+    <td><!-- Balance --></td>
+    <td>
+        <button class="btn danger" hx-get="@Url.Action("Index", new { id = Model.Id })">
+            Cancel
+        </button>
+    </td>
+    <td>
+        <button class="btn danger" hx-put="@Url.Action(null, new  { id = Model.Id })" hx-include="closest tr">
+            Save
+        </button>
+    </td>
+</tr>

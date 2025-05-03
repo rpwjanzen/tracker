@@ -2,6 +2,12 @@
 @{
     ViewData["Title"] = "Add Account";
 }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Add Account - Tracker</title>
+</head>
+<body hx-boost="true">
 <div class="box" id="account-add-box">
     <strong class="block titlebar">Add Account</strong>
     <form class="table rows">
@@ -17,3 +23,5 @@
     <!-- TODO: update the list of accounts as well -->
     <a hx-post="@Url.Action("Add")" hx-swap="outerHTML" hx-target="#account-add-box" >Add</a>
 </div>
+</body>
+</html>

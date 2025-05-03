@@ -1,0 +1,37 @@
+﻿@model IEnumerable<Tracker.Domain.Category>
+@{
+    ViewData["Title"] = "Categories";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Financial Transactions - Tracker</title>
+</head>
+<body>
+<partial name="_AddLink"/>
+<table hx-confirm="Archive category?" hx-target="closest tr" hx-swap="outerHTML swap:1s">
+    <caption>Categories</caption>
+    <thead>
+    <tr>
+        <th></th>
+        <th>Name</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var category in Model)
+    {
+        <tr>
+            <td>@category.Id</td>
+            <td>@category.Name</td>
+            <td>
+                <button class="btn danger" hx-delete="/Categories/Archive/@category.Id" >
+                    Archive
+                </button>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+</body>
+</html>

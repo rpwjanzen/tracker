@@ -1,9 +1,0 @@
-﻿@model Tracker.Controllers.FileUploadModel
-
-@{
-    ViewData["Title"] = "Import Financial Transactions";
-}
-<form asp-controller="FinancialTransactions" asp-action="Import" method="post" enctype="multipart/form-data">
-    <input type="file" asp-for="File" />
-    <button type="submit">Upload</button>
-</form>  

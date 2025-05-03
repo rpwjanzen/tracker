@@ -4,12 +4,12 @@ using Tracker.Domain;
 
 namespace Tracker.Controllers;
 
-public class AccountsController: Controller
+public class AccountController: Controller
 {
     private readonly IQueryHandler<FetchAccountsQuery, IEnumerable<Account>> _fetchAccounts;
     private readonly ICommandHandler<AddAccount> _addAccount;
     
-    public AccountsController(
+    public AccountController(
         IQueryHandler<FetchAccountsQuery, IEnumerable<Account>> fetchAccounts,
         ICommandHandler<AddAccount> addAccount)
     {
@@ -20,20 +20,19 @@ public class AccountsController: Controller
     [HttpGet]
     public IActionResult Index()
     {
-        return PartialView("_Index", _fetchAccounts.Handle(new FetchAccountsQuery()));
+        return this.HtmxView("Index", _fetchAccounts.Handle(new FetchAccountsQuery()));
     }
 
     [HttpGet]
     public IActionResult Add()
     {
-        return PartialView("_Add", Account.Empty);
+        return this.HtmxView("Add", Account.Empty);
     }
 
     [HttpPost]
     public IActionResult Add(AddAccount command)
     {
         _addAccount.Handle(command);
-        return PartialView("_AddAccount");
-        // return RedirectToAction("Index");
+        return RedirectToAction("Index");
     }
 }

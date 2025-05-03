@@ -1,0 +1,19 @@
+﻿@model Tracker.Views.Budget.BudgetSummary
+
+<div class="grid">
+    @{ int i = 2; }
+    @foreach (var month in @Model.Months)
+    {
+        <div data-cols="@i">
+            <partial name="MonthSummary" model="month"/>
+        </div>
+        i = i + 1;
+    }
+    <div data-cols="1">
+        <div>
+            <button>Categories ➕</button>
+            <button>⬆</button>
+            <button>⬇</button>
+        </div>
+    </div>
+</div>

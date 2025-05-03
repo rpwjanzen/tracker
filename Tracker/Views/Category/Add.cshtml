@@ -1,0 +1,21 @@
+﻿@model Tracker.Domain.Category
+
+@{
+    ViewData["Title"] = "Add Category";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Add Category - Tracker</title>
+</head>
+<body>
+<div class="box">
+    <strong class="block titlebar">Add Category</strong>
+    <form action="@Url.Action("Add")" method="post" hx-target="#main" class="table rows">
+        <label for="name">Name</label>
+        <input required="required" name="name" id="name" autofocus="autofocus" placeholder="Name"/>
+        <button type="submit">Add Category</button>
+    </form>
+</div>
+</body>
+</html>

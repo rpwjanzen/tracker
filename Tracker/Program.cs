@@ -10,6 +10,13 @@ var services = builder.Services;
 // cross wiring.
 var container = new SimpleInjector.Container();
 
+// configure routing to use lowercase to avoid hard to debug issues in production
+// services.AddRouting(options => options.LowercaseUrls = true);
+services.AddRouting(option =>
+{
+    option.ConstraintMap["slugify"] = typeof(SlugifyParameterTransformer);
+});
+
 // TODO: figure out where this belongs
 services.AddMvcCore();
 services.AddControllersWithViews();
@@ -66,7 +73,7 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
+    pattern: "{controller:slugify=Home}/{action:slugify=Index}/{id?}")
     .WithStaticAssets();
 
 // Always verify the container

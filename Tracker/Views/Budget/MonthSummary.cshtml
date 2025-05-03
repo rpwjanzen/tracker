@@ -1,0 +1,37 @@
+﻿@model Tracker.Views.Budget.MonthSummary
+
+<div class="f-row">
+    <div>
+        <div>@Model.Month</div>
+        <div>@Model.Year</div>
+    </div>
+    <div>
+        <table>
+            <tr>
+                <td>@Model.NotBudgeted</td>
+                <td>Not Budgeted in @Model.PreviousMonth</td>
+            </tr>
+            <tr>
+                <td>-@Model.Overspent</td>
+                <td>Overspent in @Model.PreviousMonth</td>
+            </tr>
+            <tr>
+                <td>+@Model.Income</td>
+                <td><a >Income for @Model.Month</a></td>
+            </tr>
+            <tr>
+                <td>-@Model.Budgeted</td>
+                <td>Budgeted in @Model.Month</td>
+            </tr>
+        </table>
+        <div>
+            <p>= @Model.AvailableToBudget</p>
+            <p>Available to Budget</p>
+        </div>
+    </div>
+    <div>
+        <button>📄</button>
+        <hr/>
+        <button>⚡</button>
+    </div>
+</div>
