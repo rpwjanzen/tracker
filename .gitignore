@@ -62,3 +62,6 @@ riderModule.iml
 Tracker.db
 Tracker.sln.DotSettings.user
 Tracker/wwwroot/uploads
+
+# leftovers from merges
+*.orig

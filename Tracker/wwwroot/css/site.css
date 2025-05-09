@@ -4,11 +4,54 @@ tr.htmx-swapping td {
     transition: opacity 1s ease-out;
 }
 
-:root {
-    /*--sidebar-width: 250px;*/
-    --line-length: 100vw;
-    --rhythm: 1rem;
+/* Avoid horizontal scrolling */
+body {
+    max-width: 100%;
+    overflow-x: hidden;
 }
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Grid & Flexbox */
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+}
+
+.f-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.f-col {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+}
+
+/* table stuff */
+table {
+    border-collapse: collapse;
+    border: 1px solid;
+}
+th {
+    text-align: left;
+}
+td {
+    text-align: right;
+}
+td > input {
+    text-align: right;
+}
+
+/*:root {*/
+/*    !*--sidebar-width: 250px;*!*/
+/*    --line-length: 100%;*/
+/*    --rhythm: 1rem;*/
+/*}*/
 
 /*nav {*/
 /*    height: 100%;*/
@@ -24,13 +67,13 @@ tr.htmx-swapping td {
 /*    padding: 20px;*/
 /*}*/
 
-table {
-    width: 100%;
-}
+/*table {*/
+/*    width: 100%;*/
+/*}*/
 
-tr > td > input, button {
-    width: 100%;
-}
-tr > td > button {
-    height: 100%;
-}
+/*tr > td > input, button {*/
+/*    width: 100%;*/
+/*}*/
+/*tr > td > button {*/
+/*    height: 100%;*/
+/*}*/

@@ -6,7 +6,9 @@ public class MonthSummary(
     decimal overspent,
     decimal income,
     decimal budgeted,
-    decimal availableToBudget
+    decimal availableToBudget,
+    decimal outflows,
+    decimal balance
 )
 {
     public string Month = date.ToString("MMM");
@@ -18,4 +20,7 @@ public class MonthSummary(
     public string Income = income.ToString("C");
     public string Budgeted = budgeted.ToString("C");
     public string AvailableToBudget = availableToBudget.ToString("C");
+
+    public string Outflows = outflows.ToString("C");
+    public string Balance = balance.ToString("C");
 }

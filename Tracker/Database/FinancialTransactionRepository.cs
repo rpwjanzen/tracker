@@ -14,47 +14,51 @@ public class FinancialTransactionsRepository :
 {
     private readonly DapperContext _context;
 
-    public FinancialTransactionsRepository(DapperContext context) => _context = context;
-
-    class FinancialTransactionRow
+    public FinancialTransactionsRepository(DapperContext context)
     {
-        public long transaction_id;
-        public string posted_on;
-        public string description;
-        public decimal amount;
-        public long? category_id;
-        public string? category_name;
-        
-        public FinancialTransaction ToFinancialTransaction() =>
-            new (transaction_id, ToPostedOn(posted_on), description, amount,
-                category_id is not null ? new Category(category_id.Value, category_name!) : null);
-    } 
-    
+        _context = context;
+    }
+
     public FinancialTransaction? Handle(FetchFinancialTransaction query)
     {
         using var connection = _context.CreateConnection();
-        return connection.QueryFirstOrDefault<FinancialTransactionRow>(
+        return connection.QueryFirstOrDefault<FinancialTransaction>(
             """
             SELECT
-            t.id as transaction_id, posted_on, description, amount + 0.0 as amount, category_id, c.name as category_name
+            t.id,
+            posted_on,
+            description,
+            amount + 0.0 as amount
             FROM financial_transactions t
                 LEFT JOIN categories c on c.id = t.id
             WHERE t.id = @id
             """,
             new { id = query.Id }
-        )?.ToFinancialTransaction();
+        );
     }
 
+    private record FinancialTransactionRow(long Id, string PostedOn, string Description, decimal Amount)
+    {
+        public FinancialTransactionRow(long Id, string PostedOn, string Description, byte[] Amount) : this(Id, PostedOn,
+            Description, 0m)
+        {
+            throw new Exception("" + Amount.Length);
+        }
+    }
+    
     public IEnumerable<FinancialTransaction> Handle(FetchFinancialTransactions _)
     {
         using var connection = _context.CreateConnection();
         return connection.Query<FinancialTransactionRow>(
             """
-            SELECT t.id as transaction_id, posted_on, description, amount + 0.0 as amount, category_id, c.name as category_name
-            FROM financial_transactions t LEFT JOIN categories c on c.id = t.category_id
-            ORDER BY posted_on, t.id
+            SELECT id,
+                   posted_on,
+                   description,
+                   amount + 0.0 as amount
+            FROM financial_transactions
+            ORDER BY posted_on, id
             """
-        ).Select(t => t.ToFinancialTransaction())
+        ).Select(x => new FinancialTransaction(x.Id, ToPostedOn(x.PostedOn), x.Description, x.Amount))
         .AsList();
     }
 

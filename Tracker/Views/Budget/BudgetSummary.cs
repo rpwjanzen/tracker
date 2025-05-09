@@ -1,11 +1,58 @@
-﻿namespace Tracker.Views.Budget;
+﻿using Tracker.Domain;
+
+namespace Tracker.Views.Budget;
 
 public class BudgetSummary
 {
-    public BudgetSummary(IEnumerable<MonthSummary> months)
+    public BudgetSummary(
+        IEnumerable<Category> categories,
+        IEnumerable<MonthSummary> months
+    )
     {
-        Months = months;
+        categories = categories.ToList();
+        var categoriesByParentId = categories
+            .ToLookup(x => x.ParentId);
+        var roots = categories.Where(x => x.ParentId is null);
+        Month = months.First();
+
+        var rows = new List<BudgetRow>(categories.Count());
+        foreach (var category in roots)
+        {
+            rows.Add(new BudgetRow(
+                category.Name,
+                0m.ToString("C"),
+                0m.ToString("C"),
+                0m.ToString("C"),
+                category.ParentId,
+                category.Id
+            ));    
+
+            var subcategories = categoriesByParentId[category.Id];
+            foreach (var subcategory in subcategories)
+            {
+                rows.Add(new BudgetRow(
+                    "• " + subcategory.Name,
+                    "",
+                    "",
+                    "",
+                    subcategory.ParentId,
+                    subcategory.Id
+                ));
+            }
+        }
+        
+        Rows = rows;
     }
+
+    public record BudgetRow(
+        string Name,
+        string Budgeted,
+        string Outflow,
+        string Balance,
+        long? ParentId,
+        long Id
+    );
     
-    public IEnumerable<MonthSummary> Months { get; init; }
+    public IEnumerable<BudgetRow> Rows { get; init; }
+    public MonthSummary Month { get; init; }
 }

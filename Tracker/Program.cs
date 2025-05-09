@@ -48,6 +48,8 @@ services.AddSimpleInjector(container, options =>
 // Add services to the container.
 container.Register<DapperContext>(Lifestyle.Scoped);
 container.Register(typeof(IQueryHandler<,>), typeof(IQueryHandler<,>).Assembly);
+container.Register(typeof(IDbQueryHandler<,>), typeof(IDbQueryHandler<,>).Assembly);
+container.RegisterConditional(typeof(IQueryHandler<,>), typeof(DbQueryHandlerAdapter<,>), c => !c.Handled);
 container.Register(typeof(ICommandHandler<>), typeof(ICommandHandler<>).Assembly);
 
 var app = builder.Build();
@@ -79,9 +81,9 @@ app.MapControllerRoute(
 // Always verify the container
 container.Verify();
 
-// init DB
+// // init DB
 // {
-//     using var scope = container.CreateScope();
+//     // using var scope = container.CreateScope();
 //     var context = container.GetRequiredService<DapperContext>();
 //     context.Reset();
 //     context.Init();

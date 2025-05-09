@@ -1,13 +1,8 @@
 ﻿namespace Tracker.Domain;
 
-public record FinancialTransaction(long Id, DateOnly PostedOn, string Description, decimal Amount, Category? Category)
+public record FinancialTransaction(long Id, DateOnly PostedOn, string Description, decimal Amount)
 {
-    public FinancialTransaction(long Id, DateOnly PostedOn, string Description, decimal Amount)
-        : this(Id, PostedOn, Description, Amount, null)
-    {
-    }
-
-    public static readonly FinancialTransaction Empty = new(0, DateOnly.MinValue, string.Empty, 0m, Category.Empty);
+    public static readonly FinancialTransaction Empty = new(0, DateOnly.MinValue, string.Empty, 0m);
 }
 
 public record FetchFinancialTransaction(long Id): IQuery<FinancialTransaction?>;
