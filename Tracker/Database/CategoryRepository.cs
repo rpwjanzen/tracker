@@ -7,14 +7,10 @@ namespace Tracker.Database;
 public class CategoriesRepository :
     IDbQueryHandler<FetchCategoriesQuery, IEnumerable<Category>>,
     IDbQueryHandler<FetchCategoryQuery, Category?>,
-    ICommandHandler<AddCategory>,
-    ICommandHandler<RemoveCategory>,
-    ICommandHandler<RenameCategory>
+    IDbCommandHandler<AddCategory>,
+    IDbCommandHandler<RemoveCategory>,
+    IDbCommandHandler<RenameCategory>
 {
-    private readonly DapperContext _context;
-
-    public CategoriesRepository(DapperContext context) => _context = context;
-    
     public Category? Handle(FetchCategoryQuery query, IDbConnection connection)
     {
         var category = connection.QuerySingleOrDefault<Category>(
@@ -35,25 +31,22 @@ public class CategoriesRepository :
         );
     }
 
-    public void Handle(AddCategory command)
+    public void Handle(AddCategory command, IDbConnection connection)
     {
-        using var connection = _context.CreateConnection();
         connection.Execute(
             "INSERT INTO categories (name, parent_id) VALUES(@name, @parent_id)",
             new { name = command.Name, parent_id = command.ParentId }
         );
     }
 
-    public void Handle(RemoveCategory command)
+    public void Handle(RemoveCategory command, IDbConnection connection)
     {
-        using var connection = _context.CreateConnection();
         connection.Execute("DELETE FROM categories WHERE id = @id", new { id = command.Id });
     }
 
 
-    public void Handle(RenameCategory command)
+    public void Handle(RenameCategory command, IDbConnection connection)
     {
-        using var connection = _context.CreateConnection();
         connection.Execute("UPDATE categories SET name = @name WHERE id = @id", new
         {
             id = command.Id, name = command.NewName
@@ -61,28 +54,3 @@ public class CategoriesRepository :
     }
 }
 
-// ReSharper disable TypeParameterCanBeVariant
-public interface IDbQueryHandler<TQuery, TResult> where TQuery : IQuery<TResult>
-{
-    TResult Handle(TQuery query, IDbConnection connection);
-}
-// ReSharper restore TypeParameterCanBeVariant
-
-public class DbQueryHandlerAdapter<TQuery, TResult> : IQueryHandler<TQuery, TResult>
-    where TQuery : IQuery<TResult>
-{
-    private readonly DapperContext _dapperContext;
-    private readonly IDbQueryHandler<TQuery, TResult> _queryHandler;
-    
-    public DbQueryHandlerAdapter(IDbQueryHandler<TQuery, TResult> queryHandler, DapperContext dapperContext)
-    {
-        _queryHandler = queryHandler;
-        _dapperContext = dapperContext;
-    }
-    
-    public TResult Handle(TQuery query)
-    {
-        using var connection = _dapperContext.CreateConnection();
-        return _queryHandler.Handle(query, connection);
-    }
-}

@@ -49,8 +49,14 @@ services.AddSimpleInjector(container, options =>
 container.Register<DapperContext>(Lifestyle.Scoped);
 container.Register(typeof(IQueryHandler<,>), typeof(IQueryHandler<,>).Assembly);
 container.Register(typeof(IDbQueryHandler<,>), typeof(IDbQueryHandler<,>).Assembly);
-container.RegisterConditional(typeof(IQueryHandler<,>), typeof(DbQueryHandlerAdapter<,>), c => !c.Handled);
+
 container.Register(typeof(ICommandHandler<>), typeof(ICommandHandler<>).Assembly);
+container.Register(typeof(IDbCommandHandler<>), typeof(IDbCommandHandler<>).Assembly);
+
+// expose all DB query/command handlers as non-DB query/command handlers via the adapters
+container.RegisterConditional(typeof(IQueryHandler<,>), typeof(DbQueryHandlerAdapter<,>), c => !c.Handled);
+container.RegisterConditional(typeof(ICommandHandler<>), typeof(DbCommandHandlerAdapter<>), c => !c.Handled);
+
 
 var app = builder.Build();
 
