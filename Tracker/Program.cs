@@ -57,12 +57,10 @@ container.Register(typeof(IDbCommandHandler<>), typeof(IDbCommandHandler<>).Asse
 container.RegisterConditional(typeof(IQueryHandler<,>), typeof(DbQueryHandlerAdapter<,>), c => !c.Handled);
 container.RegisterConditional(typeof(ICommandHandler<>), typeof(DbCommandHandlerAdapter<>), c => !c.Handled);
 
-
 var app = builder.Build();
 
 // UseSimpleInjector() finalizes the integration process.
 app.Services.UseSimpleInjector(container);
-
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

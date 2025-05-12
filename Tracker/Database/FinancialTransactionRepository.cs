@@ -58,8 +58,7 @@ public class FinancialTransactionsRepository :
             FROM financial_transactions
             ORDER BY posted_on, id
             """
-        ).Select(x => new FinancialTransaction(x.Id, ToPostedOn(x.PostedOn), x.Description, x.Amount))
-        .AsList();
+        ).Select(x => new FinancialTransaction(x.Id, ToPostedOn(x.PostedOn), x.Description, x.Amount));
     }
 
     public void Handle(AddFinancialTransaction command)

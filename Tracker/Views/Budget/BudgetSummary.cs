@@ -6,9 +6,12 @@ public class BudgetSummary
 {
     public BudgetSummary(
         IEnumerable<Category> categories,
+        IEnumerable<Envelope> envelopes,
         IEnumerable<MonthSummary> months
     )
     {
+        var envelopesByCategoryId = envelopes.ToDictionary(x => x.CategoryId);
+        
         categories = categories.ToList();
         var categoriesByParentId = categories
             .ToLookup(x => x.ParentId);
@@ -25,14 +28,15 @@ public class BudgetSummary
                 0m.ToString("C"),
                 category.ParentId,
                 category.Id
-            ));    
+            ));
 
             var subcategories = categoriesByParentId[category.Id];
             foreach (var subcategory in subcategories)
             {
+                var envelope = envelopesByCategoryId[subcategory.Id];
                 rows.Add(new BudgetRow(
                     "• " + subcategory.Name,
-                    "",
+                    envelope.Amount.ToString("C"),
                     "",
                     "",
                     subcategory.ParentId,

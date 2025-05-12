@@ -12,6 +12,7 @@ public class DapperContext
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")!;
         Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+        // this.Reset();
     }
 
     public IDbConnection CreateConnection() => new SqliteConnection(_connectionString);
@@ -72,6 +73,13 @@ INSERT INTO categories (name, parent_id) VALUES('Vacation', 5);
 
 INSERT INTO categories (name, parent_id) VALUES('Car Payment', 6);
 
+CREATE TABLE IF NOT EXISTS envelopes (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT ,
+    month TEXT,
+    amount numeric,
+    category_id INTEGER
+);
+
 CREATE TABLE IF NOT EXISTS financial_transactions (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     posted_on TEXT,
@@ -98,6 +106,7 @@ CREATE TABLE IF NOT EXISTS financial_transactions (
         var sql =
 """
 DROP TABLE IF EXISTS financial_transactions;
+DROP TABLE IF EXISTS envelopes;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS account_types;
