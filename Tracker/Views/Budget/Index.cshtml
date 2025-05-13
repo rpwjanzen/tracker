@@ -29,7 +29,14 @@
             @foreach (var row in Model.Rows)
             {
                 <tr>
-                    <th scope="row" hx-get="@Url.Action("InlineEdit", "Category")">@row.Name</th>
+                    <th scope="row">
+                        <span
+                            hx-get="@Url.Action("InlineEdit", "Category", new { Id = row.CategoryId })"
+                            hx-trigger="click"
+                            hx-swap="outerHTML">
+                            @row.Name
+                        </span>
+                    </th>
                     @if (row.ParentId is null)
                     {
                         <td>@row.Budgeted</td>

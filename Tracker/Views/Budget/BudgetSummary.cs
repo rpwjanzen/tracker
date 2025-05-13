@@ -23,9 +23,9 @@ public class BudgetSummary
         {
             rows.Add(new BudgetRow(
                 category.Name,
-                0m.ToString("C"),
-                0m.ToString("C"),
-                0m.ToString("C"),
+                0m.ToString("F"),
+                0m.ToString("F"),
+                0m.ToString("F"),
                 category.ParentId,
                 category.Id
             ));
@@ -36,7 +36,7 @@ public class BudgetSummary
                 var envelope = envelopesByCategoryId[subcategory.Id];
                 rows.Add(new BudgetRow(
                     "• " + subcategory.Name,
-                    envelope.Amount.ToString("C"),
+                    envelope.Amount.ToString("F"),
                     "",
                     "",
                     subcategory.ParentId,
@@ -54,7 +54,7 @@ public class BudgetSummary
         string Outflow,
         string Balance,
         long? ParentId,
-        long Id
+        long CategoryId
     );
     
     public IEnumerable<BudgetRow> Rows { get; init; }

@@ -52,8 +52,8 @@ public class EnvelopeRepository :
                 """
                 SELECT
                     c.id as category_id,
-                    CAST(coalesce(e.month, @month) AS TEXT) as month,
-                    CAST(coalesce(e.amount, 0.00) AS decimal) + 0.00 as amount
+                    coalesce(e.month, @month) as month,
+                    coalesce(e.amount, 0.00) + 0.00 as amount
                 FROM categories c
                     LEFT JOIN envelopes e ON c.id = e.category_id
                 WHERE e.month = @month OR e.month IS NULL
