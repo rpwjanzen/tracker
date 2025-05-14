@@ -1,9 +1,0 @@
-﻿@model Tracker.Domain.Category
-
-<input
-    name="name"
-    required="required"
-    value="@Model.Name"
-    hx-patch="@Url.Action("Index", "Category", new { id = Model.Id })"
-    hx-target="this"
-    hx-swap="outerHTML"/>

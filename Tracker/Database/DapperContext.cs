@@ -1,6 +1,7 @@
 using System.Data;
 using Dapper;
 using Microsoft.Data.Sqlite;
+[module:DapperAot]
 
 namespace Tracker.Database;
 
@@ -11,7 +12,7 @@ public class DapperContext
     public DapperContext(IConfiguration configuration)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")!;
-        Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+        DefaultTypeMap.MatchNamesWithUnderscores = true;
         // this.Reset();
     }
 

@@ -37,13 +37,13 @@ public class FinancialTransactionsRepository :
         );
     }
 
-    private record FinancialTransactionRow(long Id, string PostedOn, string Description, decimal Amount)
+    public record FinancialTransactionRow(long Id, string PostedOn, string Description, decimal Amount)
     {
-        public FinancialTransactionRow(long Id, string PostedOn, string Description, byte[] Amount) : this(Id, PostedOn,
-            Description, 0m)
-        {
-            throw new Exception("" + Amount.Length);
-        }
+        // public FinancialTransactionRow(long Id, string PostedOn, string Description, byte[] Amount) : this(Id, PostedOn,
+        //     Description, 0m)
+        // {
+        //     throw new Exception("" + Amount.Length);
+        // }
     }
     
     public IEnumerable<FinancialTransaction> Handle(FetchFinancialTransactions _)

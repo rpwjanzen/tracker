@@ -25,9 +25,8 @@ public class BudgetSummary
                 category.Name,
                 0m.ToString("F"),
                 0m.ToString("F"),
-                0m.ToString("F"),
                 category.ParentId,
-                category.Id
+                new Envelope(DateOnly.MinValue, 0m, 0)
             ));
 
             var subcategories = categoriesByParentId[category.Id];
@@ -36,11 +35,10 @@ public class BudgetSummary
                 var envelope = envelopesByCategoryId[subcategory.Id];
                 rows.Add(new BudgetRow(
                     "• " + subcategory.Name,
-                    envelope.Amount.ToString("F"),
                     "",
                     "",
                     subcategory.ParentId,
-                    subcategory.Id
+                    envelope
                 ));
             }
         }
@@ -50,11 +48,10 @@ public class BudgetSummary
 
     public record BudgetRow(
         string Name,
-        string Budgeted,
         string Outflow,
         string Balance,
         long? ParentId,
-        long CategoryId
+        Envelope Envelope
     );
     
     public IEnumerable<BudgetRow> Rows { get; init; }

@@ -11,6 +11,7 @@ public class MonthSummary(
     decimal balance
 )
 {
+    public DateOnly Date = date;
     public string Month = date.ToString("MMM");
     public string Year = date.ToString("yyyy");
     public string PreviousMonth = date.AddMonths(-1).ToString("MMM");

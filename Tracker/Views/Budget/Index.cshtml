@@ -31,7 +31,7 @@
                 <tr>
                     <th scope="row">
                         <span
-                            hx-get="@Url.Action("InlineEdit", "Category", new { Id = row.CategoryId })"
+                            hx-get="@Url.Action("InlineEditName", "Category", new { Id = row.Envelope.CategoryId })"
                             hx-trigger="click"
                             hx-swap="outerHTML">
                             @row.Name
@@ -39,11 +39,19 @@
                     </th>
                     @if (row.ParentId is null)
                     {
-                        <td>@row.Budgeted</td>
+                        <td><span>@row.Envelope.Amount.ToString("F"),</span></td>
                     }
                     else
                     {
-                        <td><input value="@row.Budgeted"></td>
+                        <td>
+                            <partial name="/Views/Envelope/InlineAmountEditor.cshtml" model="row.Envelope" />
+                            @* <input
+                            name="amount"
+                            value="@row.Envelope.Amount.ToString("F")"
+                            hx-swap="outerHTML"
+                            hx-patch="@Url.Action("Index", "Envelope", new { month = Model.Month.Date.ToString("yyyy-MM-dd"), categoryId = row.Envelope.CategoryId })"
+                            hx-trigger="blur"/> *@
+                        </td>
                     }
                     <td>@row.Outflow</td>
                     <td>@row.Balance</td>

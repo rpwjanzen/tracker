@@ -58,6 +58,9 @@ riderModule.iml
 /_ReSharper.Caches/
 .idea/
 
+#VS Code
+.vscode/
+
 #Misc project files
 Tracker.db
 Tracker.sln.DotSettings.user
