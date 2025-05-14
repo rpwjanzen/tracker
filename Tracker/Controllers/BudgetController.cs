@@ -5,8 +5,8 @@ using Tracker.Views.Budget;
 namespace Tracker.Controllers;
 
 public class BudgetController(
-    IQueryHandler<FetchCategoriesQuery, IEnumerable<Category>> fetchCategories,
-    IQueryHandler<FetchEnvelopesQuery, IEnumerable<Envelope>> fetchEnvelopes
+    IQueryHandler<FetchCategoriesQuery, IEnumerable<CategoryType>> fetchCategories,
+    IQueryHandler<FetchEnvelopesQuery, IEnumerable<EnvelopeType>> fetchEnvelopes
     ) : Controller
 {
     [HttpGet]

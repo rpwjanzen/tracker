@@ -5,8 +5,8 @@ namespace Tracker.Views.Budget;
 public class BudgetSummary
 {
     public BudgetSummary(
-        IEnumerable<Category> categories,
-        IEnumerable<Envelope> envelopes,
+        IEnumerable<CategoryType> categories,
+        IEnumerable<EnvelopeType> envelopes,
         IEnumerable<MonthSummary> months
     )
     {
@@ -22,11 +22,10 @@ public class BudgetSummary
         foreach (var category in roots)
         {
             rows.Add(new BudgetRow(
-                category.Name,
+                category,
+                Envelope.CreateNew(DateOnly.MinValue, 0m, 0),
                 0m.ToString("F"),
-                0m.ToString("F"),
-                category.ParentId,
-                new Envelope(DateOnly.MinValue, 0m, 0)
+                0m.ToString("F")
             ));
 
             var subcategories = categoriesByParentId[category.Id];
@@ -34,11 +33,10 @@ public class BudgetSummary
             {
                 var envelope = envelopesByCategoryId[subcategory.Id];
                 rows.Add(new BudgetRow(
-                    "• " + subcategory.Name,
+                    subcategory,
+                    envelope,
                     "",
-                    "",
-                    subcategory.ParentId,
-                    envelope
+                    ""
                 ));
             }
         }
@@ -47,11 +45,10 @@ public class BudgetSummary
     }
 
     public record BudgetRow(
-        string Name,
+        CategoryType Category,
+        EnvelopeType Envelope,
         string Outflow,
-        string Balance,
-        long? ParentId,
-        Envelope Envelope
+        string Balance
     );
     
     public IEnumerable<BudgetRow> Rows { get; init; }

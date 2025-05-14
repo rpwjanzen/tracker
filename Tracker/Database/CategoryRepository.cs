@@ -5,24 +5,23 @@ using Tracker.Domain;
 namespace Tracker.Database;
 
 public class CategoriesRepository :
-    IDbQueryHandler<FetchCategoriesQuery, IEnumerable<Category>>,
-    IDbQueryHandler<FetchCategoryQuery, Category?>,
+    IDbQueryHandler<FetchCategoriesQuery, IEnumerable<CategoryType>>,
+    IDbQueryHandler<FetchCategoryQuery, OptionType<CategoryType>>,
     IDbCommandHandler<AddCategory>,
     IDbCommandHandler<RemoveCategory>,
     IDbCommandHandler<RenameCategory>
 {
-    public Category? Handle(FetchCategoryQuery query, IDbConnection connection)
+    public OptionType<CategoryType> Handle(FetchCategoryQuery query, IDbConnection connection)
     {
-        var category = connection.QuerySingleOrDefault<Category>(
+        return connection.QuerySingleOrDefault<CategoryType>(
             "SELECT id, name, parent_id FROM categories WHERE id = @id",
             new { id = query.Id }
-        );
-        return category;
+        ).ToOption();
     }
 
-    public IEnumerable<Category> Handle(FetchCategoriesQuery query, IDbConnection connection)
+    public IEnumerable<CategoryType> Handle(FetchCategoriesQuery query, IDbConnection connection)
     {
-        return connection.Query<Category>(
+        return connection.Query<CategoryType>(
             """
             SELECT c.id, c.name, c.parent_id
             FROM categories c

@@ -34,23 +34,20 @@
                             hx-get="@Url.Action("InlineEditName", "Category", new { Id = row.Envelope.CategoryId })"
                             hx-trigger="click"
                             hx-swap="outerHTML">
-                            @row.Name
+                            @row.Category.Name
                         </span>
                     </th>
-                    @if (row.ParentId is null)
+                    @if (row.Category.ParentId is null)
                     {
-                        <td><span>@row.Envelope.Amount.ToString("F"),</span></td>
+                        <td>
+                            <!-- TODO: use a custom element that totals the 'value's of observed elements -->
+                            <span>@row.Envelope.Amount.ToString("F")</span>
+                        </td>
                     }
                     else
                     {
                         <td>
                             <partial name="/Views/Envelope/InlineAmountEditor.cshtml" model="row.Envelope" />
-                            @* <input
-                            name="amount"
-                            value="@row.Envelope.Amount.ToString("F")"
-                            hx-swap="outerHTML"
-                            hx-patch="@Url.Action("Index", "Envelope", new { month = Model.Month.Date.ToString("yyyy-MM-dd"), categoryId = row.Envelope.CategoryId })"
-                            hx-trigger="blur"/> *@
                         </td>
                     }
                     <td>@row.Outflow</td>

@@ -5,25 +5,14 @@ using Tracker.Domain;
 namespace Tracker.Database;
 
 public class EnvelopeRepository :
+    IDbCommandHandler<CreateEnvelope>,
     IDbCommandHandler<UpdateEnvelopeAmount>,
-    IDbQueryHandler<FetchEnvelopesQuery, IEnumerable<Envelope>>,
-    IDbQueryHandler<FetchEnvelopeQuery, OptionType<Envelope>>
+    IDbQueryHandler<FetchEnvelopesQuery, IEnumerable<EnvelopeType>>,
+    IDbQueryHandler<FetchEnvelopeQuery, OptionType<EnvelopeType>>
 {
-    public void Handle(UpdateEnvelopeAmount command, IDbConnection connection)
+    public void Handle(CreateEnvelope command, IDbConnection connection)
     {
-        var rowsAffected = connection.Execute(
-            "UPDATE envelopes SET amount = @amount WHERE month = @month AND category_id = @categoryId",
-            new
-            {
-                amount = command.Amount,
-                month = command.Month,
-                categoryId = command.CategoryId
-            }
-        );
-
-        if (rowsAffected == 0)
-        {
-            connection.Execute(
+        connection.Execute(
                 "INSERT INTO envelopes (month, amount, category_id)  VALUES (@month, @amount, @categoryId)",
                 new
                 {
@@ -32,10 +21,21 @@ public class EnvelopeRepository :
                     amount = command.Amount
                 }
             );
-        }
     }
 
-    public record EnvelopeRow(long CategoryId, string Month, double Amount)
+    public void Handle(UpdateEnvelopeAmount command, IDbConnection connection)
+    {
+        connection.Execute(
+            "UPDATE envelopes SET amount = @amount WHERE id = @id",
+            new
+            {
+                id = command.Id,
+                amount = command.Amount,
+            }
+        );
+    }
+
+    public record EnvelopeRow(long Id, string Month, double Amount, long CategoryId)
     {
         // public EnvelopeRow(long CategoryId, string Month, double Amount)
         //     : this(CategoryId, Month, (decimal)Amount)
@@ -43,46 +43,44 @@ public class EnvelopeRepository :
         // }
     }
     
-    public IEnumerable<Envelope> Handle(FetchEnvelopesQuery query, IDbConnection connection)
+    public IEnumerable<EnvelopeType> Handle(FetchEnvelopesQuery query, IDbConnection connection)
     {
         return connection.Query<EnvelopeRow>(
                 """
                 SELECT
-                    c.id as category_id,
-                    coalesce(e.month, @month) as month,
-                    coalesce(e.amount, 0.00) + 0.00 as amount
-                FROM categories c
-                    LEFT JOIN envelopes e ON c.id = e.category_id
-                WHERE e.month = @month OR e.month IS NULL
+                    id,
+                    month,
+                    amount + 0.00 as amount,
+                    category_id
+                FROM envelopes e
+                WHERE e.month = @month
                 """,
                 new
                 {
                     month = query.Month.ToString()
                 }
             )
-            .Select(x => new Envelope(DateOnly.Parse(x.Month), (decimal)x.Amount, x.CategoryId));
+            .Select(x => Envelope.CreateExisting(x.Id, DateOnly.Parse(x.Month), (decimal)x.Amount, x.CategoryId));
     }
 
-    public OptionType<Envelope> Handle(FetchEnvelopeQuery query, IDbConnection connection)
+    public OptionType<EnvelopeType> Handle(FetchEnvelopeQuery query, IDbConnection connection)
     {
         return connection.QueryFirstOrDefault<EnvelopeRow>(
             """
             SELECT
-                    c.id as category_id,
-                    coalesce(e.month, @month) as month,
-                    coalesce(e.amount, 0.00) + 0.00 as amount
-                FROM categories c
-                    LEFT JOIN envelopes e ON c.id = e.category_id
-                WHERE (e.month = @month OR e.month IS NULL)
-                    AND (e.category_id = @categoryId OR e.category_id IS NULL)
+                    id,
+                    month,
+                    amount + 0.00 as amount,
+                    category_id
+                FROM envelopes
+                WHERE id = @id
                 LIMIT 1
             """,
             new
             {
-                month = query.Month.ToString(),
-                categoryId = query.CategoryId
+                id = query.Id,
             }
         ).ToOption()
-        .Map(x => new Envelope(DateOnly.Parse(x.Month), (decimal)x.Amount, x.CategoryId));
+        .Map(x => Envelope.CreateExisting(x.Id, DateOnly.Parse(x.Month), (decimal)x.Amount, x.CategoryId));
     }
 }

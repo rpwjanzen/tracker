@@ -1,29 +1,28 @@
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Tracker.Domain;
 
 namespace Tracker.Controllers;
 
 public class EnvelopeController(
-    IQueryHandler<FetchEnvelopeQuery, OptionType<Envelope>> fetchEnvelope,
+    IQueryHandler<FetchEnvelopeQuery, OptionType<EnvelopeType>> fetchEnvelope,
     ICommandHandler<UpdateEnvelopeAmount> updateAmountHandler
 ) : Controller
 {
 
     [HttpGet]
-    public IActionResult Index(DateOnly month, long categoryId)
+    public IActionResult Index(long id)
     {
-        return fetchEnvelope.Handle(new FetchEnvelopeQuery(month, categoryId))
-            .Map<Envelope, IActionResult>(x => PartialView("Envelope", x))
+        return fetchEnvelope.Handle(new FetchEnvelopeQuery(id))
+            .Map<EnvelopeType, IActionResult>(x => PartialView("Envelope", x))
             .Reduce(NotFound());
     }
 
     [HttpPatch]
-    public IActionResult Index(DateOnly month, long categoryId, decimal amount)
+    public IActionResult Index(long id, decimal amount)
     {
-        updateAmountHandler.Handle(new UpdateEnvelopeAmount(month, categoryId, amount));
-        return fetchEnvelope.Handle(new FetchEnvelopeQuery(month, categoryId))
-            .Map<Envelope, IActionResult>(x => PartialView("InlineAmountEditor", x))
+        updateAmountHandler.Handle(new UpdateEnvelopeAmount(id, amount));
+        return fetchEnvelope.Handle(new FetchEnvelopeQuery(id))
+            .Map<EnvelopeType, IActionResult>(x => PartialView("InlineAmountEditor", x))
             .Reduce(NotFound());
     }
 }

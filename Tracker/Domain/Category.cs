@@ -1,12 +1,18 @@
 ﻿namespace Tracker.Domain;
 
-public record Category(long Id, string Name, long? ParentId)
+public record CategoryType(long Id, string Name, long? ParentId);
+
+public static class Category
 {
-    public static readonly Category Empty = new (0, string.Empty, null);
+    public static readonly CategoryType Empty = new (0, string.Empty, null);
+    public static CategoryType CreateNew(string name, long? parentId)
+        => new (0L, name, parentId);
+    public static CategoryType CreateExisting(long id, string name, long? parentId)
+        => new (id, name, parentId);
 }
 
-public record FetchCategoriesQuery : IQuery<IEnumerable<Category>>;
-public record FetchCategoryQuery(long Id) : IQuery<Category?>;
+public record FetchCategoriesQuery : IQuery<IEnumerable<CategoryType>>;
+public record FetchCategoryQuery(long Id) : IQuery<OptionType<CategoryType>>;
 
 public record AddCategory(string Name, long? ParentId);
 public record RenameCategory(long Id, string NewName);

@@ -1,8 +1,13 @@
-@model Tracker.Domain.Envelope
+@model Tracker.Domain.EnvelopeType
 
 <input
+    is="money-element"
     name="amount"
     value="@Model.Amount.ToString("F")"
+    type="number"
+    step="0.01"
+    min="0.00"
+    required
     hx-swap="outerHTML"
-    hx-patch="@Url.Action("Index", "Envelope", new { month = Model.Month.ToString("yyyy-MM-dd"), categoryId = Model.CategoryId })"
+    hx-patch="@Url.Action("Index", "Envelope", new { id = Model.Id })"
     hx-trigger="blur"/>

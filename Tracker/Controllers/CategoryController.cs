@@ -5,8 +5,8 @@ using Tracker.Domain;
 namespace Tracker.Controllers;
 
 public class CategoryController(
-    IQueryHandler<FetchCategoriesQuery, IEnumerable<Category>> fetchCategories,
-    IQueryHandler<FetchCategoryQuery, Category?> fetchCategory,
+    IQueryHandler<FetchCategoriesQuery, IEnumerable<CategoryType>> fetchCategories,
+    IQueryHandler<FetchCategoryQuery, OptionType<CategoryType>> fetchCategory,
     ICommandHandler<AddCategory> addCategory,
     ICommandHandler<RemoveCategory> archiveCategory,
     ICommandHandler<RenameCategory> renameCategory) : Controller
@@ -18,50 +18,29 @@ public class CategoryController(
     public IActionResult Add() => this.HtmxView("Add");
 
     [HttpGet]
-    public IActionResult InlineEditName(long id)
-    {
-        var category = fetchCategory.Handle(new FetchCategoryQuery(id));
-        return PartialView("InlineEditName", category);
-    }
+    public IActionResult InlineEditName(long id) =>
+        fetchCategory.Handle(new FetchCategoryQuery(id))
+            .Match<CategoryType, IActionResult>(x => PartialView("InlineEditName", x), NotFound);
 
     [HttpPatch]
     public IActionResult Index(long id, string name)
     {
         renameCategory.Handle(new RenameCategory(id, name));
-        var category = fetchCategory.Handle(new FetchCategoryQuery(id));
-        if (Request.IsHtmx())
-        {
-            return PartialView("Inline", category!);
-        }
-
-        return NoContent();
+        return fetchCategory.Handle(new FetchCategoryQuery(id))
+            .Match<CategoryType, IActionResult>(x => Request.IsHtmx() ? PartialView("Inline", x) : NoContent(), NotFound);
     }
 
     [HttpPost]
     public IActionResult Add(string name, long? parentId)
     {
         addCategory.Handle(new AddCategory(name, parentId));
-        
-        if (Request.IsHtmxBoosted())
-        {
-            return RedirectToAction("Index");
-        }
-
-        return Ok();
+        return Request.IsHtmx()? RedirectToAction("Index") : Ok();
     }
     
     [HttpDelete]
     public IActionResult Archive(long id)
     {
         archiveCategory.Handle(new RemoveCategory(id));
-
-        if (Request.IsHtmxBoosted())
-        {
-            return Ok();
-        }
-        else
-        {
-            return RedirectToAction("Index");
-        }
+        return Request.IsHtmx() ? Ok() : RedirectToAction("Index");
     }
 }
