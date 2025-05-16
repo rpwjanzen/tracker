@@ -13,28 +13,33 @@ public class CategoriesRepository :
 {
     public OptionType<CategoryType> Handle(FetchCategoryQuery query, IDbConnection connection)
     {
-        return connection.QuerySingleOrDefault<CategoryType>(
+        var (id, name, parentId) = connection.QuerySingleOrDefault<(long id, string name, long? parentId)>(
             "SELECT id, name, parent_id FROM categories WHERE id = @id",
             new { id = query.Id }
-        ).ToOption();
+        );
+        if (id == 0m)
+        {
+            return Option.None<CategoryType>();
+        }
+        return Category.CreateExisting(id, name, parentId.ToOption());
     }
 
     public IEnumerable<CategoryType> Handle(FetchCategoriesQuery query, IDbConnection connection)
     {
-        return connection.Query<CategoryType>(
+        return connection.Query<(long id, string name, long? parent_id)>(
             """
             SELECT c.id, c.name, c.parent_id
             FROM categories c
             ORDER BY c.parent_id, c.id
             """
-        );
+        ).Select(x => Category.CreateExisting(x.id, x.name, x.parent_id.ToOption()));
     }
 
     public void Handle(AddCategory command, IDbConnection connection)
     {
         connection.Execute(
             "INSERT INTO categories (name, parent_id) VALUES(@name, @parent_id)",
-            new { name = command.Name, parent_id = command.ParentId }
+            new { name = command.Name, parent_id = command.ParentId.ToNullable() }
         );
     }
 
@@ -48,8 +53,8 @@ public class CategoriesRepository :
     {
         connection.Execute("UPDATE categories SET name = @name WHERE id = @id", new
         {
-            id = command.Id, name = command.NewName
+            id = command.Id,
+            name = command.NewName
         });
     }
 }
-

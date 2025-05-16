@@ -11,36 +11,37 @@ public class BudgetSummary
     )
     {
         var envelopesByCategoryId = envelopes.ToDictionary(x => x.CategoryId);
-        
-        categories = categories.ToList();
-        var categoriesByParentId = categories
-            .ToLookup(x => x.ParentId);
-        var roots = categories.Where(x => x.ParentId is null);
+
+        categories = [.. categories];
+        var categoriesByParentId = categories.ToLookup(x => x.ParentId);
+        var rootCategories = categories.Where(x => x.ParentId.HasValue);
         Month = months.First();
 
         var rows = new List<BudgetRow>(categories.Count());
-        foreach (var category in roots)
+        foreach (var rootCategory in rootCategories)
         {
             rows.Add(new BudgetRow(
-                category,
+                rootCategory,
                 Envelope.CreateNew(DateOnly.MinValue, 0m, 0),
                 0m.ToString("F"),
                 0m.ToString("F")
             ));
 
-            var subcategories = categoriesByParentId[category.Id];
+            var subcategories = categoriesByParentId[rootCategory.Id];
             foreach (var subcategory in subcategories)
             {
-                var envelope = envelopesByCategoryId[subcategory.Id];
-                rows.Add(new BudgetRow(
-                    subcategory,
-                    envelope,
-                    "",
-                    ""
-                ));
+                if (envelopesByCategoryId.TryGetValue(subcategory.Id, out var envelope))
+                {
+                    rows.Add(new BudgetRow(
+                        subcategory,
+                        envelope,
+                        "",
+                        ""
+                    ));
+                }
             }
         }
-        
+
         Rows = rows;
     }
 
@@ -50,7 +51,7 @@ public class BudgetSummary
         string Outflow,
         string Balance
     );
-    
+
     public IEnumerable<BudgetRow> Rows { get; init; }
     public MonthSummary Month { get; init; }
 }

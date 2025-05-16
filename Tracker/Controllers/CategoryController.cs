@@ -33,10 +33,10 @@ public class CategoryController(
     [HttpPost]
     public IActionResult Add(string name, long? parentId)
     {
-        addCategory.Handle(new AddCategory(name, parentId));
-        return Request.IsHtmx()? RedirectToAction("Index") : Ok();
+        addCategory.Handle(new AddCategory(name, parentId.ToOption()));
+        return Request.IsHtmx() ? RedirectToAction("Index") : Ok();
     }
-    
+
     [HttpDelete]
     public IActionResult Archive(long id)
     {

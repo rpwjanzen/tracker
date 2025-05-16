@@ -1,7 +1,6 @@
 using System.Data;
 using Dapper;
 using Microsoft.Data.Sqlite;
-[module:DapperAot]
 
 namespace Tracker.Database;
 

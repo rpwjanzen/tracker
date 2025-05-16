@@ -35,17 +35,9 @@ public class EnvelopeRepository :
         );
     }
 
-    public record EnvelopeRow(long Id, string Month, double Amount, long CategoryId)
-    {
-        // public EnvelopeRow(long CategoryId, string Month, double Amount)
-        //     : this(CategoryId, Month, (decimal)Amount)
-        // {
-        // }
-    }
-    
     public IEnumerable<EnvelopeType> Handle(FetchEnvelopesQuery query, IDbConnection connection)
     {
-        return connection.Query<EnvelopeRow>(
+        return connection.Query<(long Id, string Month, double Amount, long CategoryId)>(
                 """
                 SELECT
                     id,
@@ -63,9 +55,8 @@ public class EnvelopeRepository :
             .Select(x => Envelope.CreateExisting(x.Id, DateOnly.Parse(x.Month), (decimal)x.Amount, x.CategoryId));
     }
 
-    public OptionType<EnvelopeType> Handle(FetchEnvelopeQuery query, IDbConnection connection)
-    {
-        return connection.QueryFirstOrDefault<EnvelopeRow>(
+    public OptionType<EnvelopeType> Handle(FetchEnvelopeQuery query, IDbConnection connection) =>
+        connection.QueryFirstOrDefault<(long Id, string Month, double Amount, long CategoryId)>(
             """
             SELECT
                     id,
@@ -80,7 +71,9 @@ public class EnvelopeRepository :
             {
                 id = query.Id,
             }
-        ).ToOption()
-        .Map(x => Envelope.CreateExisting(x.Id, DateOnly.Parse(x.Month), (decimal)x.Amount, x.CategoryId));
-    }
+        ) switch
+        {
+            (0, _, _, _) => Option.None<EnvelopeType>(),
+            var x => Envelope.CreateExisting(x.Id, DateOnly.Parse(x.Month), (decimal)x.Amount, x.CategoryId)
+        };
 }

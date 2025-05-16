@@ -3,19 +3,20 @@
 <div class="grid">
     <div></div>
     <div>&ac;########### Month Picker ###########&ac;</div>
-    
+
     <div></div>
     <div>
-        <partial name="MonthSummary" model="@Model.Month"/>
+        <partial name="MonthSummary" model="@Model.Month" />
     </div>
-    
+
     <div style="grid-column: 1 / 3">
         <table>
             <thead>
                 <tr>
                     <th scope="col">
                         <div class="f-row">
-                            <button hx-target="next tbody" hx-swap="afterbegin" hx-get="@Url.Action("Add", "Category")">Categories ➕</button>
+                            <button hx-target="next tbody" hx-swap="afterbegin"
+                                hx-get="@Url.Action("Add", "Category")">Categories ➕</button>
                             <button>↥</button>
                             <button>↧</button>
                         </div>
@@ -26,42 +27,40 @@
                 </tr>
             </thead>
             <tbody>
-            @foreach (var row in Model.Rows)
-            {
-                <tr>
-                    <th scope="row">
-                        <span
-                            hx-get="@Url.Action("InlineEditName", "Category", new { Id = row.Envelope.CategoryId })"
-                            hx-trigger="click"
-                            hx-swap="outerHTML">
-                            @row.Category.Name
-                        </span>
-                    </th>
-                    @if (row.Category.ParentId is null)
-                    {
-                        <td>
-                            <!-- TODO: use a custom element that totals the 'value's of observed elements -->
-                            <span>@row.Envelope.Amount.ToString("F")</span>
-                        </td>
-                    }
-                    else
-                    {
-                        <td>
-                            <partial name="/Views/Envelope/InlineAmountEditor.cshtml" model="row.Envelope" />
-                        </td>
-                    }
-                    <td>@row.Outflow</td>
-                    <td>@row.Balance</td>
-                </tr>
-            }
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <th scope="row">
+                            <span hx-get="@Url.Action("InlineEditName", "Category", new { Id = row.Envelope.CategoryId })"
+                                hx-trigger="click" hx-swap="outerHTML">
+                                @row.Category.Name
+                            </span>
+                        </th>
+                        @if (!row.Category.ParentId.HasValue)
+                        {
+                            <td>
+                                <!-- TODO: use a custom element that totals the 'value's of observed elements -->
+                                <span>@row.Envelope.Amount.ToString("F")</span>
+                            </td>
+                        }
+                        else
+                        {
+                            <td>
+                                <partial name="/Views/Envelope/InlineAmountEditor.cshtml" model="row.Envelope" />
+                            </td>
+                        }
+                        <td>@row.Outflow</td>
+                        <td>@row.Balance</td>
+                    </tr>
+                }
             </tbody>
             <tfoot>
-            <tr>
-                <th scope="row">Totals</th>
-                <td></td>
-                <td></td>
-                <td></td>
-            </tr>
+                <tr>
+                    <th scope="row">Totals</th>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
             </tfoot>
         </table>
     </div>
