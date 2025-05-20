@@ -4,22 +4,26 @@ using Tracker.Domain;
 namespace Tracker.Controllers;
 
 public class AccountController(
-    IQueryHandler<FetchAccountsQuery, IEnumerable<Account>> fetchAccounts,
-    ICommandHandler<AddAccount> addAccount) : Controller
+    IQueryHandler<FetchAccountsQuery, IEnumerable<AccountType>> fetchAccounts,
+    ICommandHandler<AddAccount> addAccount
+) : Controller
 {
     [HttpGet]
-    public IActionResult Index()
-    {
-        return this.HtmxView("Index", fetchAccounts.Handle(new FetchAccountsQuery()));
-    }
-
+    public IActionResult Index() => PartialView("Index", fetchAccounts.Handle(new FetchAccountsQuery()));
+    
     [HttpGet]
-    public IActionResult Add() => this.HtmxView("Add", Account.Empty);
+    public IActionResult Index(long id)
+    {
+        return PartialView("Index", fetchAccounts.Handle(new FetchAccountsQuery()));
+    }
+    
+    [HttpGet]
+    public IActionResult Add() => PartialView("Add", Account.Empty);
 
     [HttpPost]
     public IActionResult Add(AddAccount command)
     {
         addAccount.Handle(command);
-        return RedirectToAction("Index");
+        return Created();
     }
 }

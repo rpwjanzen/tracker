@@ -31,24 +31,14 @@
                 {
                     <tr>
                         <th scope="row">
-                            <span hx-get="@Url.Action("InlineEditName", "Category", new { Id = row.Envelope.CategoryId })"
+                            <span hx-get="@Url.Action("InlineEditName", "Category", new { Id = row.CategoryId })"
                                 hx-trigger="click" hx-swap="outerHTML">
-                                @row.Category.Name
+                                @row.CategoryName
                             </span>
                         </th>
-                        @if (!row.Category.ParentId.HasValue)
-                        {
                             <td>
-                                <!-- TODO: use a custom element that totals the 'value's of observed elements -->
-                                <span>@row.Envelope.Amount.ToString("F")</span>
+                                <partial name="/Views/Envelope/InlineAmountEditor.cshtml" model="(row.EnvelopeId, row.Budgeted)" />
                             </td>
-                        }
-                        else
-                        {
-                            <td>
-                                <partial name="/Views/Envelope/InlineAmountEditor.cshtml" model="row.Envelope" />
-                            </td>
-                        }
                         <td>@row.Outflow</td>
                         <td>@row.Balance</td>
                     </tr>

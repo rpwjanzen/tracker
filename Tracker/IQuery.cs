@@ -4,7 +4,7 @@ namespace Tracker;
 
 // From https://blogs.cuttingedge.it/steven/posts/2011/meanwhile-on-the-query-side-of-my-architecture/
 
-public interface IQuery<TResult> { }
+public interface IQuery<TResult>;
 
 public interface IQueryHandler<TQuery, TResult>
     where TQuery : IQuery<TResult>

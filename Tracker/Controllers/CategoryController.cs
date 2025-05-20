@@ -31,9 +31,9 @@ public class CategoryController(
     }
 
     [HttpPost]
-    public IActionResult Add(string name, long? parentId)
+    public IActionResult Add(string name)
     {
-        addCategory.Handle(new AddCategory(name, parentId.ToOption()));
+        addCategory.Handle(new AddCategory(name));
         return Request.IsHtmx() ? RedirectToAction("Index") : Ok();
     }
 

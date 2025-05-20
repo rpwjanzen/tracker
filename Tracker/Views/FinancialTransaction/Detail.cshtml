@@ -1,7 +1,7 @@
-﻿@model Tracker.Domain.FinancialTransaction
+﻿@model Tracker.Domain.FinancialTransactionType
 <tr>
     <td>@Model.PostedOn.ToString("yyyy-MM-dd")</td>
-    <td>@Model.Description</td>
+    <td>@Model.Payee</td>
     <td>@Model.Amount.ToString("C")</td>
     <td><!-- Balance --></td>
     <td>

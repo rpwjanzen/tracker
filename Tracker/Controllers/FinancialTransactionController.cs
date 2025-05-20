@@ -29,38 +29,18 @@ namespace Tracker.Controllers;
 // DELETE  Account/id     deletes an account for the specified id
 // POST    Accounts       creates multiple accounts as per POST body
 
-public class FinancialTransactionController : Controller
+public class FinancialTransactionController(
+    IQueryHandler<FetchFinancialTransactions, IEnumerable<FinancialTransactionType>> fetchFinancialTransactionsHandler,
+    IQueryHandler<FetchFinancialTransaction, FinancialTransactionType?> fetchFinancialTransactionHandler,
+    ICommandHandler<AddFinancialTransaction> addFinancialTransactionService,
+    ICommandHandler<UpdateFinancialTransaction> updateFinancialTransactionService,
+    ICommandHandler<ImportTransactions> importTransactions,
+    ICommandHandler<RemoveTransaction> removeTransaction)
+    : Controller
 {
-    private readonly IQueryHandler<FetchFinancialTransactions, IEnumerable<FinancialTransaction>>
-        _fetchFinancialTransactionsHandler;
-    private readonly IQueryHandler<FetchFinancialTransaction, FinancialTransaction?> _fetchFinancialTransactionHandler;
-    private readonly ICommandHandler<AddFinancialTransaction> _addFinancialTransactionService;
-    private readonly ICommandHandler<UpdateFinancialTransaction> _updateFinancialTransactionService;
-    private readonly ICommandHandler<ImportTransactions> _importTransactions;
-    private readonly ICommandHandler<RemoveTransaction> _removeTransaction;
-    
-    public FinancialTransactionController(
-        IQueryHandler<FetchFinancialTransactions, IEnumerable<FinancialTransaction>> fetchFinancialTransactionsHandler,
-        IQueryHandler<FetchFinancialTransaction, FinancialTransaction?> fetchFinancialTransactionHandler,
-        ICommandHandler<AddFinancialTransaction> addFinancialTransactionService,
-        ICommandHandler<UpdateFinancialTransaction> updateFinancialTransactionService,
-        ICommandHandler<ImportTransactions> importTransactions,
-        ICommandHandler<RemoveTransaction> removeTransaction)
-    {
-        _fetchFinancialTransactionsHandler = fetchFinancialTransactionsHandler;
-        _fetchFinancialTransactionHandler = fetchFinancialTransactionHandler;
-        
-        _addFinancialTransactionService = addFinancialTransactionService;
-        _updateFinancialTransactionService = updateFinancialTransactionService;
-        _removeTransaction = removeTransaction;
-        
-        _importTransactions = importTransactions;
-    }
-
     private IActionResult Index()
     {
-        var query = new FetchFinancialTransactions();
-        var transactions = _fetchFinancialTransactionsHandler.Handle(query);
+        var transactions = fetchFinancialTransactionsHandler.Handle(new FetchFinancialTransactions());
 
         var transactionViews = new List<FinancialTransactionView>();
         var runningTotal = 0m;
@@ -69,7 +49,7 @@ public class FinancialTransactionController : Controller
             runningTotal += transaction.Amount;
             transactionViews.Add(new FinancialTransactionView
             {
-                FinancialTransaction = transaction,
+                FinancialTransactionType = transaction,
                 Balance = runningTotal
             });
         }
@@ -85,7 +65,7 @@ public class FinancialTransactionController : Controller
             return Index();
         }
         
-        var model = _fetchFinancialTransactionHandler.Handle(new FetchFinancialTransaction(id.Value));
+        var model = fetchFinancialTransactionHandler.Handle(new FetchFinancialTransaction(id.Value));
         if (model is null)
         {
             return NotFound();
@@ -102,7 +82,7 @@ public class FinancialTransactionController : Controller
             return BadRequest();
         }
             
-        _addFinancialTransactionService.Handle(addFinancialTransaction);
+        addFinancialTransactionService.Handle(addFinancialTransaction);
         return RedirectToAction("Index");
     }
     
@@ -115,7 +95,9 @@ public class FinancialTransactionController : Controller
         }
 
         var u = updateFinancialTransaction;
-        _updateFinancialTransactionService.Handle(new (u.Id, u.PostedOn, u.Description, u.Amount));
+        updateFinancialTransactionService.Handle(
+            new UpdateFinancialTransaction(u.Id, u.AccountId, u.PostedOn, u.Payee, u.CategoryId, u.Memo, u.Amount, u.Direction, u.ClearedStatus)
+        );
         // TODO: return the row view instead
         return Ok();
     }
@@ -124,7 +106,7 @@ public class FinancialTransactionController : Controller
     [ActionName("Index")]
     public IActionResult IndexDelete(long id)
     {
-        _removeTransaction.Handle(new RemoveTransaction(id));
+        removeTransaction.Handle(new RemoveTransaction(id));
         return Ok();
     }
 
@@ -133,7 +115,7 @@ public class FinancialTransactionController : Controller
     [HttpGet]
     public IActionResult Edit(long id)
     {
-        var model = _fetchFinancialTransactionHandler.Handle(new(id));
+        var model = fetchFinancialTransactionHandler.Handle(new(id));
         if (model is null)
         {
             return NotFound();
@@ -175,8 +157,8 @@ public class FinancialTransactionController : Controller
         var response = JsonSerializer.Deserialize<BmoTransactionsResponse>(text, options);
         Trace.Assert(response is not null);
         var transactions = response.GetBankAccountDetailsRs.BodyResponse.BankAccountTransaction
-            .Select(t => new AddFinancialTransaction(t.TransactionDate, t.Description, t.Amount));
-        _importTransactions.Handle(new ImportTransactions(transactions));
+            .Select(t => new AddFinancialTransaction(0L, t.TransactionDate, t.Description, null, string.Empty, t.Amount, Direction.Inflow, default));
+        importTransactions.Handle(new ImportTransactions(transactions));
     }
 }
 

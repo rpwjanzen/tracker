@@ -1,79 +1,84 @@
-using System.Globalization;
 using Dapper;
 using Tracker.Domain;
 
 namespace Tracker.Database;
 
-public class FinancialTransactionsRepository :
-    IQueryHandler<FetchFinancialTransactions, IEnumerable<FinancialTransaction>>,
-    IQueryHandler<FetchFinancialTransaction, FinancialTransaction?>,
+public class FinancialTransactionsRepository(DapperContext context) :
+    IQueryHandler<FetchFinancialTransactions, IEnumerable<FinancialTransactionType>>,
+    IQueryHandler<FetchFinancialTransaction, FinancialTransactionType?>,
     ICommandHandler<AddFinancialTransaction>,
     ICommandHandler<UpdateFinancialTransaction>,
     ICommandHandler<ImportTransactions>,
     ICommandHandler<RemoveTransaction>
 {
-    private readonly DapperContext _context;
-
-    public FinancialTransactionsRepository(DapperContext context)
+    public FinancialTransactionType? Handle(FetchFinancialTransaction query)
     {
-        _context = context;
+        using var connection = context.CreateConnection();
+        return connection
+            .Query<(long Id, string PostedOn, string Payee, decimal Amount, string Direction, string Memo,
+                long AccountId, string ClearedStatus, long? CategoryId)>(
+                """
+                SELECT ft.id, posted_on, payee, amount + 0.00 AS amount, direction, memo, account_id, cleared_status, ce.category_id
+                FROM financial_transactions ft
+                    LEFT JOIN financial_transactions_envelopes fte ON ft.id = fte.financial_transaction_id
+                    LEFT JOIN categories_envelopes ce ON ce.envelope_id = fte.envelope_id
+                WHERE ft.id = @id
+                """,
+                new { id = query.Id }
+            ).Select(x => FinancialTransaction.CreateExisting(
+                x.Id,
+                x.AccountId,
+                DateOnly.Parse(x.PostedOn),
+                x.Payee,
+                x.CategoryId,
+                x.Memo,
+                x.Amount,
+                Enum.Parse<Direction>(x.Direction),
+                Enum.Parse<ClearedStatus>(x.ClearedStatus))
+            ).FirstOrDefault();
     }
 
-    public FinancialTransaction? Handle(FetchFinancialTransaction query)
+    public IEnumerable<FinancialTransactionType> Handle(FetchFinancialTransactions _)
     {
-        using var connection = _context.CreateConnection();
-        return connection.QueryFirstOrDefault<FinancialTransaction>(
+        using var connection = context.CreateConnection();
+        return connection.Query<(long Id, string PostedOn, string Payee, decimal Amount, string Direction, string Memo, long AccountId, string ClearedStatus, long? CategoryId)>(
             """
-            SELECT
-            t.id,
-            posted_on,
-            description,
-            amount + 0.0 as amount
-            FROM financial_transactions t
-                LEFT JOIN categories c on c.id = t.id
-            WHERE t.id = @id
-            """,
-            new { id = query.Id }
-        );
-    }
-
-    public record FinancialTransactionRow(long Id, string PostedOn, string Description, decimal Amount)
-    {
-        // public FinancialTransactionRow(long Id, string PostedOn, string Description, byte[] Amount) : this(Id, PostedOn,
-        //     Description, 0m)
-        // {
-        //     throw new Exception("" + Amount.Length);
-        // }
-    }
-    
-    public IEnumerable<FinancialTransaction> Handle(FetchFinancialTransactions _)
-    {
-        using var connection = _context.CreateConnection();
-        return connection.Query<FinancialTransactionRow>(
-            """
-            SELECT id,
-                   posted_on,
-                   description,
-                   amount + 0.0 as amount
-            FROM financial_transactions
+            SELECT ft.id, posted_on, payee, amount + 0.00 AS amount, direction, memo, account_id, cleared_status, ce.category_id
+            FROM financial_transactions ft
+                LEFT JOIN financial_transactions_envelopes fte ON ft.id = fte.financial_transaction_id
+                LEFT JOIN categories_envelopes ce ON ce.envelope_id = fte.envelope_id
             ORDER BY posted_on, id
             """
-        ).Select(x => new FinancialTransaction(x.Id, ToPostedOn(x.PostedOn), x.Description, x.Amount));
+        ).Select(x => FinancialTransaction.CreateExisting(
+            x.Id,
+            x.AccountId,
+            DateOnly.Parse(x.PostedOn),
+            x.Payee,
+            x.CategoryId,
+            x.Memo,
+            x.Amount,
+            Enum.Parse<Direction>(x.Direction),
+            Enum.Parse<ClearedStatus>(x.ClearedStatus))
+        );
     }
 
     public void Handle(AddFinancialTransaction command)
     {
-        using var connection = _context.CreateConnection();
+        using var connection = context.CreateConnection();
         connection.Execute(
             """
-            INSERT INTO financial_transactions (posted_on, description, amount)
-            VALUES (@postedOn, @description, @amount)
+            INSERT INTO financial_transactions (posted_on, payee, amount, direction, memo, account_id, cleared_status)
+            VALUES (@postedOn, @payee, @outflow, @inflow, @memo, @accountId, @clearedStatus)
             """,
             new
             {
-                postedOn = command.PostedOn.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                description = command.Description,
-                amount = command.Amount.ToString(CultureInfo.InvariantCulture),
+                postedOn = command.PostedOn,
+                payee = command.Payee,
+                amount = command.Amount,
+                direction = command.Direction,
+                memo = command.Memo,
+                accountId = command.AccountId,
+                clearedStatus = command.ClearedStatus
             }
         );
     }
@@ -88,28 +93,37 @@ public class FinancialTransactionsRepository :
 
     public void Handle(RemoveTransaction command)
     {
-        using var connection = _context.CreateConnection();
+        using var connection = context.CreateConnection();
         connection.Execute("DELETE FROM financial_transactions WHERE id = @id", new { id = command.Id });
     }
 
     public void Handle(UpdateFinancialTransaction command)
     {
-        using var connection = _context.CreateConnection();
+        using var connection = context.CreateConnection();
         connection.Execute(
             """
             UPDATE financial_transactions
-            SET posted_on = @postedOn,
-                description = @description,
-                amount = @amount
+            SET
+                posted_on = @postedOn,
+                payee = @payee,
+                amount = @amount,
+                direction = @direction,
+                memo = @memo,
+                cleared_status = @clearedStatus,
+                account_id = @accountId
             WHERE id = @id
             """,
             new
             {
-                id = command.Id, postedOn = command.PostedOn, description = command.Description, amount = command.Amount
+                id = command.Id,
+                postedOn = command.PostedOn,
+                payee = command.Payee,
+                amount = command.Amount,
+                direction = command.Direction,
+                memo = command.Memo,
+                clearedStatus = command.ClearedStatus,
+                accountId = command.AccountId
             }
         );
     }
-
-    private static DateOnly ToPostedOn(string value) =>
-        DateOnly.ParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture);
 }

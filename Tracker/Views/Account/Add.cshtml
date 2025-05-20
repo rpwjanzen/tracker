@@ -1,27 +1,45 @@
-﻿@model Tracker.Domain.Account
-@{
-    ViewData["Title"] = "Add Account";
-}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Add Account - Tracker</title>
-</head>
-<body hx-boost="true">
-<div class="box" id="account-add-box">
-    <strong class="block titlebar">Add Account</strong>
-    <form class="table rows">
-        <label for="name">Name</label>
-        <input required="required" name="name" id="name" placeholder="Name"/>
+﻿@using Tracker.Domain
+@model Tracker.Domain.AccountType
+
+<dialog>
+    <form style="display: flex; flex-direction: column; align-items: flex-start">
+        <div>
+            <label for="name">Name</label>
+            <input required name="name" id="name" placeholder="Name" autofocus/>
+        </div>
         
-        <label for="category">Category</label>
-        <select name="category" id="category">
-            <option value="1" selected="selected">Debit</option>
-            <option value="2">Credit</option>
-        </select>
+        <div>
+            <label for="currentBalance">Current Balance</label>
+            <input required name="currentBalance" id="currentBalance" type="number" step="0.01"/>
+        </div>
+        
+        <div>
+            <label for="balanceDate">Balance Date</label>
+            <input required name="balanceDate" id="balanceDate" type="date"/>
+        </div>
+        
+        <div>
+            <label for="accountType">Type</label>
+            <select id="accountType" name="accountType" required>
+                @foreach (var value in Enum.GetValues<AccountKind>())
+                {
+                    <option value="@value">@Enum.GetName(value)</option>
+                }
+            </select>
+        </div>
+        
+        <div>
+        @foreach (var value in Enum.GetValues<BudgetKind>())
+        {
+            <label for="@value">@Enum.GetName(value)</label>
+            <input type="radio" id="@value" name="budgetKind" value="@value"/>
+        }
+        </div>
+        <div>
+            @* cannot use formmethod="dialog" to close the dialog, as it will enforce the 'required' attributes above *@
+            @* See also https://medium.com/@martin.mohnhaupt/two-ways-to-build-html-dialogs-using-htmx-and-hyperscript-5f5eefb13c4c *@
+            <button _="on click close() the closest parent <dialog/>">Cancel</button>
+            <button hx-post="@Url.Action("Add")" hx-target="closest dialog" hx-swap="outerHTML">Add Account</button>
+        </div>
     </form>
-    <!-- TODO: update the list of accounts as well -->
-    <a hx-post="@Url.Action("Add")" hx-swap="outerHTML" hx-target="#account-add-box" >Add</a>
-</div>
-</body>
-</html>
+</dialog>

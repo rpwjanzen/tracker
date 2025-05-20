@@ -12,6 +12,7 @@
     @* Put script in header instead of footer so that HTMX does not need to be reloaded when the body is replaced. *@
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/hyperscript.org@0.9.14"></script>
     <script src="/js/site.js"></script>
 </head>
 <body hx-boost="true">
@@ -25,12 +26,10 @@
                     <a asp-area="" asp-controller="Reports" asp-action="Index" hx-target="#main">Reports</a>
                 </li>
                 <li>
-                    <details>
-                        <summary>Budget Accounts</summary>
-                    </details>
+                    <a asp-area="" asp-controller="Account" asp-action="Index" hx-target="#main">Accounts</a>
                 </li>
                 <li>
-                    <button>➕Add Account</button>
+                    <button hx-get="@Url.Action("Add", "Account")" hx-target="#htmx-dialog-container">➕Add Account</button>
                 </li>
 
                 @* <!-- Old pages  --> *@
@@ -60,6 +59,7 @@
         @RenderBody()
     </main>
 
+    <div id="htmx-dialog-container" _="on htmx:afterSettle call (first of me).showModal()"></div>
     <footer>
         &copy; 2025 - Tracker - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
     </footer>

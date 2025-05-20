@@ -1,5 +1,14 @@
-@model Tracker.Domain.EnvelopeType
+@model (long, decimal)
 
-<input is="money-element" name="amount" value="@Model.Amount.ToString("F")" type="number" step="0.01" min="0.00"
-    required aria-label="amount" hx-swap="outerHTML" hx-patch="@Url.Action("Index", "Envelope", new { id = Model.Id })"
+<input
+    is="money-element"
+    name="amount"
+    value="@Model.Item2.ToString("F")"
+    type="number"
+    step="0.01"
+    min="0.00"
+    required
+    aria-label="amount"
+    hx-swap="outerHTML"
+    hx-patch="@Url.Action("Index", "Envelope", new { id = Model.Item1 })"
     hx-trigger="blur" />

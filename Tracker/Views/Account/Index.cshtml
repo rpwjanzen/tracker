@@ -1,35 +1,29 @@
-﻿@model IEnumerable<Tracker.Domain.Account>
+﻿@using Tracker.Domain
+@model IEnumerable<Tracker.Domain.AccountType>
 
-@{
-    ViewData["Title"] = "Accounts";
-}
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Accounts - Tracker</title>
-</head>
-<body>
-<partial name="_AddLink"/>
-<table>
-    <caption>Accounts</caption>
-    <thead>
-    <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Balance</th>
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var account in Model)
-    {
-        <tr>
-            <td>@account.Name</td>
-            <td></td>
-            <td></td>
-        </tr>
-    }
-    </tbody>
-</table>
-</body>
-</html>
+<details open>
+    <summary>Budget Accounts: @Model.Where(x => x.BudgetKind == BudgetKind.Budget).Sum(x => x.CurrentBalance).ToString("C")</summary>
+    <ul>
+        @foreach (var account in Model.Where(x => x.BudgetKind == BudgetKind.Budget))
+        {
+            <li>
+                <a hx-get="@Url.Action("Index", "Account", new { id = account.Id })" hx-target="#main">
+                    @account.Name: @account.CurrentBalance.ToString("C")
+                </a>
+            </li>
+        }
+    </ul>
+</details>
+<details open>
+    <summary>Off-Budget Accounts: @Model.Where(x => x.BudgetKind == BudgetKind.OffBudget).Sum(x => x.CurrentBalance).ToString("C")</summary>
+    <ul>
+        @foreach (var account in Model.Where(x => x.BudgetKind == BudgetKind.OffBudget))
+        {
+            <li>
+                <a hx-get="@Url.Action("Index", "Account", new { id = account.Id })" hx-target="#main">
+                    @account.Name: @account.CurrentBalance.ToString("C")
+                </a>
+            </li>
+        }
+    </ul>
+</details>

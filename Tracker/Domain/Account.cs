@@ -1,17 +1,64 @@
 ﻿namespace Tracker.Domain;
 
-public record Account(long Id, string Name, long Category)
+public enum AccountKind
 {
-    public static readonly Account Empty = new Account(0, string.Empty, 0);
+    Checking,
+    Savings,
+    CreditCard,
+    Cash,
+    LineOfCredit,
+    Paypal,
+    MerchantAccount,
+    InvestmentAccount,
+    Mortgage,
+    OtherAsset, // house, car, etc
+    OtherLoanOrLiability
 }
 
-// values are used in DB
-public enum AccountCategory
+public enum BudgetKind
 {
-    Debit = 1,
-    Credit = 2,
+    Budget,
+    OffBudget
 }
 
-public record FetchAccountsQuery : IQuery<IEnumerable<Account>>;
+public record AccountType(
+    long Id,
+    string Name,
+    decimal CurrentBalance,
+    DateOnly BalanceDate,
+    AccountKind Kind,
+    BudgetKind BudgetKind
+);
 
-public record AddAccount(string Name, long CategoryId);
+public record FetchAccountsQuery : IQuery<IEnumerable<AccountType>>;
+
+//  name, current balance, date of current balance, kind, budget/off-budget account
+public record AddAccount(
+    string Name,
+    decimal CurrentBalance,
+    DateOnly BalanceDate,
+    AccountKind Kind,
+    BudgetKind BudgetKind
+);
+
+public static class Account
+{
+    public static readonly AccountType Empty = new (0L, string.Empty, 0m, default, default, default);
+
+    public static AccountType CreateNew(
+        string name,
+        decimal currentBalance,
+        DateOnly balanceDate,
+        AccountKind kind,
+        BudgetKind budgetKind)
+        => new (0L, name, currentBalance, balanceDate, kind, budgetKind);
+    
+    public static AccountType CreateExisting(
+        long id,
+        string name,
+        decimal currentBalance,
+        DateOnly balanceDate,
+        AccountKind kind,
+        BudgetKind budgetKind)
+        => new (id, name, currentBalance, balanceDate, kind, budgetKind);
+}
