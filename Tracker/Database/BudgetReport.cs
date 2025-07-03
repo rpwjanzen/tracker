@@ -1,10 +1,13 @@
+using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using Dapper;
 using Tracker.Domain;
 
 namespace Tracker.Database;
 
-public class BudgetReport(IQueryHandler<FetchEnvelopesQuery, IEnumerable<EnvelopeType>> fetchEnvelopes) : IDbQueryHandler<FetchBudgetRowsQuery, IEnumerable<BudgetRowReadModel>>
+public class BudgetReport() : IDbQueryHandler<FetchBudgetRowsQuery, IEnumerable<BudgetRowReadModel>>
 {
     public IEnumerable<BudgetRowReadModel> Handle(FetchBudgetRowsQuery query, IDbConnection connection)
         => connection.Query<(long, string, string, long, decimal, decimal, decimal)>(
@@ -22,6 +25,6 @@ public class BudgetReport(IQueryHandler<FetchEnvelopesQuery, IEnumerable<Envelop
                     JOIN main.envelopes e ON e.id = ce.id
                 WHERE e.month = @month
             """,
-            new { month = query.Month.ToString()}
-        ).Select(t => new BudgetRowReadModel(t.Item1,t.Item2, DateOnly.Parse(t.Item3), t.Item4, t.Item5, t.Item6, t.Item7));
+            new { month = query.Month.ToString() }
+        ).Select(t => new BudgetRowReadModel(t.Item1, t.Item2, DateOnly.Parse(t.Item3), t.Item4, t.Item5, t.Item6, t.Item7));
 }

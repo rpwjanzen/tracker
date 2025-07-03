@@ -1,0 +1,17 @@
+﻿@model Tracker.Domain.Category
+
+<tr hx-target="this" hx-swap="outerHTML">
+    <td>@Model.Id</td>
+    <td>@Model.Name</td>
+    <td>
+        <button hx-get="@Url.Action("EditForm", "Categories", new { id = Model.Id })">
+            Edit
+        </button>
+    </td>
+    <td>
+        <button hx-delete="@Url.Action("Delete", "Categories", new { id = Model.Id })"
+                hx-confirm="Delete category?">
+            Delete
+        </button>
+    </td>
+</tr>

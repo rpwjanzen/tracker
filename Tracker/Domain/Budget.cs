@@ -1,4 +1,6 @@
-﻿namespace Tracker.Domain;
+﻿using System;
+
+namespace Tracker.Domain;
 
 public class Budget;
 

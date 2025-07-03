@@ -1,0 +1,37 @@
+﻿@model IEnumerable<FinancialTransactionView>
+@{
+    ViewData["Title"] = "Financial Transactions";
+}
+<a asp-controller="FinancialTransactions" asp-action="Add">Add</a>
+<a asp-controller="FinancialTransactions" asp-action="Import">Import</a>
+<table hx-target="closest tr">
+    <caption>Financial Transactions</caption>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in Model)
+        {
+            <tr>
+                <td>@t.FinancialTransactionType.PostedOn.ToString("yyyy-MM-dd")</td>
+                <td>@t.FinancialTransactionType.Payee</td>
+                <td>@t.FinancialTransactionType.Amount.ToString("C")</td>
+                <td><!-- Balance --></td>
+                <td>
+                    <a href="/financial-transaction/@t.FinancialTransactionType.Id/edit">Edit</a>
+                </td>
+                <td>
+                    <form action="/financial-transaction/@t.FinancialTransactionType.Id/remove" method="post">
+                        <button type="submit">Remove</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

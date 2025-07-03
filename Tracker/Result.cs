@@ -1,3 +1,5 @@
+using System;
+
 namespace Tracker;
 
 public readonly struct ResultType<T, TError>: IEquatable<ResultType<T, TError>>

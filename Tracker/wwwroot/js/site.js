@@ -5,17 +5,26 @@
 
 // Add some custom components such as always-formatted to 2 decimal digits money one
 
-
-class MoneyElement extends HTMLInputElement {
-    static observedAttributes = ["value"];
-
-    constructor() {
-        super();
+// HTMX anti-forgery token support
+// adds the token (if present) to non-GET AJAX requests
+// from: https://khalidabuhakmeh.com/htmx-requests-with-aspnet-core-anti-forgery-tokens
+document.addEventListener("htmx:configRequest", (evt) => {
+    let httpVerb = evt.detail.verb.toUpperCase();
+    if (httpVerb === 'GET') {
+        return;
     }
+    
+    let antiForgery = htmx.config.antiForgery;
+    if (antiForgery) {
+        if (evt.detail.parameters[antiForgery.formFieldName]) {
+            // already specified on form, short circuit
+            return;
+        }
 
-    attributeChangedCallback(name, oldValue, newValue) {
-        console.log(`Attribute ${name} has changed.`);
+        if (antiForgery.headerName) {
+            evt.detail.headers[antiForgery.headerName] = antiForgery.requestToken;
+        } else {
+            evt.detail.parameters[antiForgery.formFieldName] = antiForgery.requestToken;
+        }
     }
-}
-
-customElements.define("money-element", MoneyElement, { extends: "input" });
+});

@@ -1,4 +1,7 @@
-﻿namespace Tracker.Domain;
+﻿using System;
+using System.Collections.Generic;
+
+namespace Tracker.Domain;
 
 // account, date, payee, alert, category, memo, outflow, inflow
 public record FinancialTransactionType(

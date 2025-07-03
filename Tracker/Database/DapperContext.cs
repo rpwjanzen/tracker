@@ -1,6 +1,10 @@
+using System.Collections.Generic;
 using System.Data;
+using System.IO;
+using System.Linq;
 using Dapper;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Configuration;
 
 namespace Tracker.Database;
 
@@ -12,24 +16,55 @@ public class DapperContext
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")!;
         DefaultTypeMap.MatchNamesWithUnderscores = true;
-        // Reset();
+        SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
+        SqlMapper.AddTypeHandler(new GuidHandler());
+        SqlMapper.AddTypeHandler(new TimeSpanHandler());
+        // SqlMapper.AddTypeHandler(new DecimalHandler());
+        Reset();
     }
 
-    public IDbConnection CreateConnection()
-        => new SqliteConnection(_connectionString);
+    public SqliteConnection CreateConnection()
+    {
+        var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+        
+        // enable foreign keys as they are not on by default
+        conn.Execute("PRAGMA foreign_keys = ON;");
+        
+        return conn;
+    }
+    
+    public SqliteConnection CreateBulkInsertConnection()
+    {
+        var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+        return conn;
+    }
 
     public void Init()
     {
-        using var connection = CreateConnection();
-        connection.Open();
-// long Id, string Name, decimal CurrentBalance, DateOnly BalanceDate, AccountKind Kind, BudgetKind BudgetKind
+        using var connection = CreateBulkInsertConnection();
+        // Data types used are based off of MS info at
+        // https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/types
         var sql =
 """
+CREATE TABLE IF NOT EXISTS account_types (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS budget_types (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS accounts (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    kind TEXT NOT NULL,
-    budgetKind TEXT NOT NULL
+    account_type_id TEXT NOT NULL,
+    budget_type_id TEXT NOT NULL,
+    FOREIGN KEY (account_type_id) REFERENCES account_types(id),
+    FOREIGN KEY (budget_type_id) REFERENCES budget_types(id)
 );
 
 CREATE TABLE IF NOT EXISTS categories (
@@ -37,24 +72,17 @@ CREATE TABLE IF NOT EXISTS categories (
     name TEXT NOT NULL
 );
 
---INSERT INTO categories (id, name) VALUES(1, 'Giving');
---INSERT INTO categories (id, name) VALUES(2, 'Monthly Bills');
---INSERT INTO categories (id, name) VALUES(3, 'Everyday Expenses');
---INSERT INTO categories (id, name) VALUES(4, 'Rainy Day Funds');
---INSERT INTO categories (id, name) VALUES(5, 'Savings Goals');
---INSERT INTO categories (id, name) VALUES(6, 'Debt');
-
 CREATE TABLE IF NOT EXISTS envelopes (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT ,
     month TEXT NOT NULL,
-    amount numeric NOT NULL
+    amount TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS financial_transactions (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     posted_on TEXT NOT NULL,
     payee TEXT NOT NULL,
-    amount decimal,
+    amount TEXT NOT NULL,
     direction TEXT NOT NULL,
     memo TEXT NOT NULL,
     account_id INTEGER NOT NULL,
@@ -100,39 +128,74 @@ DROP TABLE IF EXISTS financial_transactions;
 DROP TABLE IF EXISTS envelopes;
 DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS accounts;
+DROP TABLE IF EXISTS account_types;
+DROP TABLE IF EXISTS budget_types;
 """;
         connection.Execute(sql);
         connection.Close();
     }
-    
+
     public void Import()
     {
-        using var connection = CreateConnection();
-        connection.Open();
-        
-        ImportCategories(connection);
-        ImportEnvelopes(connection);
+        using var connection = CreateBulkInsertConnection();
+
+        ImportCsv(connection, "categories");
+        // ImportEnvelopes(connection);
+        // ImportCsv(connection, "account_types");
+        // ImportCsv(connection, "budget_types");
 
         connection.Close();
     }
-
-    private static void ImportCategories(IDbConnection connection)
+    
+    private static void ImportCsv(IDbConnection connection, string tableName)
     {
-        var lines = File.ReadLines("Import\\categories.csv");
-        foreach (var line in lines.Skip(1))
+        var parameters = new List<IDbDataParameter>();
+        using var transaction = connection.BeginTransaction();
+        var command = connection.CreateCommand();
+        
+        var isFirst = true;
+        foreach (var line in File.ReadLines($"Import\\{tableName}.csv"))
         {
-            var parts = line.Split(',');
-            connection.Execute(
-                "INSERT INTO categories (id, name) VALUES (@id, @name)",
-                new { id = parts[0], name = parts[1] }
-            );
+            if (isFirst)
+            {
+                isFirst = false;
+                ProcessHeaders(tableName, line, command, parameters);
+            }
+            else
+            {
+                var parts = line.Split(',');
+                for (var i =0; i < parts.Length; i++)
+                {
+                    parameters[i].Value = parts[i];
+                }
+                command.ExecuteNonQuery();
+            }
         }
+        transaction.Commit();
+    }
+
+    private static void ProcessHeaders(string tableName, string line, IDbCommand command, List<IDbDataParameter> parameters)
+    {
+        var headers = line.Split(',');
+        foreach (var header in headers)
+        {
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = "@" + header;
+            command.Parameters.Add(parameter);
+            parameters.Add(parameter);
+        }
+
+        var parameterKeys = parameters.Select(x => x.ParameterName).ToList();
+        // yes, we support SQL injection from CSV files.
+        var keyNames = string.Join(',', headers);
+        var keyParams = string.Join(',', headers.Select(x => '@' + x));
+        command.CommandText = $"INSERT INTO {tableName} ({keyNames}) VALUES ({keyParams})";
     }
 
     private static void ImportEnvelopes(IDbConnection connection)
     {
-        var lines = File.ReadLines("Import\\budgets.csv");
-        foreach(var line in lines.Skip(1))
+        var lines = File.ReadLines("Import\\envelopes.csv");
+        foreach (var line in lines.Skip(1))
         {
             var parts = line.Split(',');
             connection.Execute(
@@ -143,7 +206,7 @@ DROP TABLE IF EXISTS accounts;
                     month = parts[1],
                     amount = parts[3]
                 });
-            
+
             connection.Execute(
                 "INSERT INTO categories_envelopes (category_id, envelope_id) VALUES (@categoryId, @envelopeId)",
                 new

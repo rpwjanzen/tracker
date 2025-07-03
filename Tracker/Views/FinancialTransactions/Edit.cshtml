@@ -1,0 +1,16 @@
+﻿@model Tracker.Domain.FinancialTransactionType
+
+@{
+    ViewData["Title"] = "Financial Transactions";
+}
+
+<form style="display:grid; grid-template-columns: max-content max-content">
+    <label for="postedOn">Posted On</label>
+    <input autofocus name='postedOn' value='@Model.PostedOn.ToString("yyyy-MM-dd")' type="date">
+    <label for="description">Posted On</label>
+    <input name='description' value='@Model.Payee'>
+    <label for="amount">Posted On</label>
+    <input name='amount' value='@Model.Amount.ToString("C")'>
+    <a href="/financial-transaction">Cancel</a>
+    <button>Save</button>
+</form>

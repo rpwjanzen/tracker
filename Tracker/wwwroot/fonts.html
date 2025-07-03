@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Font Demo</title>
+</head>
+<body>
+<ul>
+    <li> Works in tested browsers
+        <ul>
+            <li style="font-family: serif">Serif</li>
+            <li style="font-family: sans-serif">Sans-serif</li>
+            <li style="font-family: cursive">Cursive</li>
+            <li style="font-family: fantasy">Fantasy (No custom font for Firefox.)</li>
+            <li style="font-family: math">Math -- Does not work in Safari</li>
+            <li style="font-family: monospace">Monospace</li>
+            <li style="font-family: monospace, monospace">Monospace, monospace</li>
+        </ul>
+    </li>
+    
+    <li>Maybe works in some browsers
+        <ul>
+            <li style="font-family: system-ui">System-UI</li>
+            <li style="font-family: emoji">Emoji 🥲🤯😁</li>
+        </ul>
+    </li>
+    
+    <li>Only work on Safari 13+
+        <ul>
+            <li style="font-family: ui-serif">UI-Serif</li>
+            <li style="font-family: ui-sans-serif">UI-Sans-Serif</li>
+            <li style="font-family: ui-monospace">UI-monospace</li>
+            <li style="font-family: ui-rounded">UI-rounded</li>
+        </ul>
+    </li>
+</ul>
+<pre style="width: 5em; text-wrap: wrap; hyphens: auto; font-family: monospace, monospace">Monospace, Monospace
+    M MM MMM MMMM Quo&shy;Ba MMMMMM This is some text that
+    is long and should
+    wrap I guess.</pre>
+<pre style="width: 5em; text-wrap: wrap; hyphens: auto; font-family: monospace">Monospace
+    M MM MMM MMMM Quo&shy;Ba MMMMMM This is some text that
+    is long and should
+    wrap I guess.</pre>
+</body>
+</html>

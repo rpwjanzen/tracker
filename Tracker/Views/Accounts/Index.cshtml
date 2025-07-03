@@ -1,0 +1,18 @@
+﻿@model IEnumerable<Tracker.Domain.Account>
+
+@{
+    ViewData["Title"] = "Accounts";
+}
+
+<h1>Accounts: @Model.Sum(x => x.CurrentBalance).ToString("C")</h1>
+<ul>
+    @foreach (var account in Model)
+    {
+        <li>
+            <a asp-controller="Accounts" asp-action="Index" asp-route-id="@account.Id">
+                @account.Name : @account.CurrentBalance.ToString("C")
+            </a>
+        </li>
+    }
+</ul>
+<a asp-action="Add">Add Account</a>

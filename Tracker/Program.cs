@@ -1,14 +1,12 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Tracker;
 using Tracker.Database;
 using SimpleInjector;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
-
-// Sets up the basic configuration that for integrating Simple Injector with
-// ASP.NET Core by setting the DefaultScopedLifestyle, and setting up auto
-// cross wiring.
-var container = new SimpleInjector.Container();
 
 // configure routing to use lowercase to avoid hard to debug issues in production
 // services.AddRouting(options => options.LowercaseUrls = true);
@@ -21,6 +19,10 @@ services.AddRouting(option =>
 services.AddMvcCore();
 services.AddControllersWithViews();
 
+// Sets up the basic configuration that for integrating Simple Injector with
+// ASP.NET Core by setting the DefaultScopedLifestyle, and setting up auto
+// cross wiring.
+var container = new SimpleInjector.Container();
 services.AddSimpleInjector(container, options =>
 {
     // AddAspNetCore() wraps web requests in a Simple Injector scope and
@@ -75,6 +77,7 @@ app.UseRouting();
 
 app.UseAuthorization();
 
+app.UseStaticFiles();
 app.MapStaticAssets();
 
 app.MapControllerRoute(
@@ -82,15 +85,6 @@ app.MapControllerRoute(
     pattern: "{controller:slugify=Home}/{action:slugify=Index}/{id?}")
     .WithStaticAssets();
 
-// Always verify the container
 container.Verify();
-
-// // init DB
-// {
-//     // using var scope = container.CreateScope();
-//     var context = container.GetRequiredService<DapperContext>();
-//     context.Reset();
-//     context.Init();
-// }
 
 app.Run();

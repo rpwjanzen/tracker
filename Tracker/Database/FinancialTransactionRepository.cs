@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Dapper;
 using Tracker.Domain;
 
@@ -38,28 +41,56 @@ public class FinancialTransactionsRepository(DapperContext context) :
             ).FirstOrDefault();
     }
 
-    public IEnumerable<FinancialTransactionType> Handle(FetchFinancialTransactions _)
+    public IEnumerable<FinancialTransactionType> Handle(FetchFinancialTransactions query)
     {
-        using var connection = context.CreateConnection();
-        return connection.Query<(long Id, string PostedOn, string Payee, decimal Amount, string Direction, string Memo, long AccountId, string ClearedStatus, long? CategoryId)>(
-            """
+        if (!query.AccountId.HasValue)
+        {
+            using var connection = context.CreateConnection();
+            return connection.Query<(long Id, string PostedOn, string Payee, decimal Amount, string Direction, string Memo, long AccountId, string ClearedStatus, long? CategoryId)>(
+                """
             SELECT ft.id, posted_on, payee, amount + 0.00 AS amount, direction, memo, account_id, cleared_status, ce.category_id
             FROM financial_transactions ft
                 LEFT JOIN financial_transactions_envelopes fte ON ft.id = fte.financial_transaction_id
                 LEFT JOIN categories_envelopes ce ON ce.envelope_id = fte.envelope_id
-            ORDER BY posted_on, id
+            ORDER BY posted_on, ft.id
             """
-        ).Select(x => FinancialTransaction.CreateExisting(
-            x.Id,
-            x.AccountId,
-            DateOnly.Parse(x.PostedOn),
-            x.Payee,
-            x.CategoryId,
-            x.Memo,
-            x.Amount,
-            Enum.Parse<Direction>(x.Direction),
-            Enum.Parse<ClearedStatus>(x.ClearedStatus))
-        );
+            ).Select(x => FinancialTransaction.CreateExisting(
+                x.Id,
+                x.AccountId,
+                DateOnly.Parse(x.PostedOn),
+                x.Payee,
+                x.CategoryId,
+                x.Memo,
+                x.Amount,
+                Enum.Parse<Direction>(x.Direction),
+                Enum.Parse<ClearedStatus>(x.ClearedStatus))
+            );
+        }
+        else
+        {
+            using var connection = context.CreateConnection();
+            return connection.Query<(long Id, string PostedOn, string Payee, decimal Amount, string Direction, string Memo, long AccountId, string ClearedStatus, long? CategoryId)>(
+                """
+                SELECT ft.id, posted_on, payee, amount + 0.00 AS amount, direction, memo, account_id, cleared_status, ce.category_id
+                FROM financial_transactions ft
+                    LEFT JOIN financial_transactions_envelopes fte ON ft.id = fte.financial_transaction_id
+                    LEFT JOIN categories_envelopes ce ON ce.envelope_id = fte.envelope_id
+                WHERE ft.account_id = @accountId
+                ORDER BY posted_on, ft.id
+                """,
+                new { accountId = query.AccountId.Value }
+            ).Select(x => FinancialTransaction.CreateExisting(
+                x.Id,
+                x.AccountId,
+                DateOnly.Parse(x.PostedOn),
+                x.Payee,
+                x.CategoryId,
+                x.Memo,
+                x.Amount,
+                Enum.Parse<Direction>(x.Direction),
+                Enum.Parse<ClearedStatus>(x.ClearedStatus))
+            );
+        }
     }
 
     public void Handle(AddFinancialTransaction command)

@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace Tracker.Domain;
 
 public record EnvelopeType(long Id, DateOnly Month, decimal Amount, long? CategoryId);
