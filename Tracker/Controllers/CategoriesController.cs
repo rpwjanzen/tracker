@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Dapper;
 using Microsoft.AspNetCore.Mvc;
 using Tracker.Database;
@@ -13,46 +14,42 @@ public sealed class CategoriesController(DapperContext db) : Controller
     {
         using var connection = db.CreateConnection();
         var categories = connection.Query<Category>("SELECT id, name FROM categories ORDER BY id");
-        return View("Index", new CategoryViewModel(Fragment.List, null, categories));
+        return View("Index", CategoryViewModel.ForCategories(Fragment.List, categories));
     }
 
     [HttpGet("categories/{id:long}")]
     public IActionResult Index(long id)
     {
         var category = FetchCategory(id);
-        return PartialView("Index", new CategoryViewModel(Fragment.Details, category, null));
+        return View("Index", CategoryViewModel.ForCategory(Fragment.Details, category));
     }
 
     [HttpGet("categories/add")]
-    public IActionResult Add()
-        => PartialView("Index", new CategoryViewModel(Fragment.New, Category.Empty, null));
+    public IActionResult AddForm()
+        => View("Index", CategoryViewModel.ForCategory(Fragment.New, Category.Empty));
 
-    [HttpPost("categories")]
+    [HttpPost("categories/add")]
     [ValidateAntiForgeryToken]
     public IActionResult Add(string name)
     {
         // TODO: if not valid, return Add view with sent contents
         using var connection = db.CreateConnection();
-        var id = connection.ExecuteScalar<long>(
-            "INSERT INTO categories (name) VALUES (@name) RETURNING id",
+        connection.ExecuteScalar<long>(
+            "INSERT INTO categories (name) VALUES (@name)",
             new { name = name }
         );
         
-        return PartialView("Index", new CategoryViewModel(Fragment.Details, Category.CreateExisting(id, name), null));
+        return Redirect("/categories");
     }
 
-    // not convinced this is the best way to cancel out of add
-    [HttpGet("categories/cancel-add")]
-    public IActionResult CancelAdd() => Ok();
-    
     [HttpGet("categories/{id:long}/edit")]
     public IActionResult EditForm(long id)
     {
         var category = FetchCategory(id);
-        return PartialView("Index", new CategoryViewModel(Fragment.Edit, category, null));
+        return View("Index", CategoryViewModel.ForCategory(Fragment.Edit, category));
     }
 
-    [HttpPatch("categories/{id:long}")]
+    [HttpPost("categories/{id:long}/edit")]
     [ValidateAntiForgeryToken]
     public IActionResult Edit(long id, string name)
     {
@@ -62,25 +59,20 @@ public sealed class CategoriesController(DapperContext db) : Controller
             id = id,
             name = name
         });
-        
-        var category = FetchCategory(id);
-        return PartialView("Index", new CategoryViewModel(Fragment.Details, category, null));
+        return Redirect("/categories");
     }
 
-    [HttpGet("categories/{id:long}/cancel-edit")]
-    public IActionResult CancelEdit(long id)
-    {
-        var category = FetchCategory(id);
-        return PartialView("Index", new CategoryViewModel(Fragment.Details, category, null));
-    }
-
-    [HttpDelete("categories/{id:long}")]
+    [HttpGet("categories/{id:long}/delete")]
+    public IActionResult DeleteForm(long id)
+        => View("Index", CategoryViewModel.ForCategory(Fragment.Delete, FetchCategory(id)));
+    
+    [HttpPost("categories/{id:long}/delete")]
     [ValidateAntiForgeryToken]
     public IActionResult Delete(long id)
     {
         using var connection = db.CreateConnection();
         connection.Execute("DELETE FROM categories WHERE id = @id", new { id = id });
-        return Ok();
+        return Redirect("/categories");
     }
 
     private Category FetchCategory(long id)
@@ -98,6 +90,14 @@ public enum Fragment
     New,
     Edit,
     List,
-    Details
+    Details,
+    Delete
 }
-public record CategoryViewModel(Fragment FragmentId, Category? Category, IEnumerable<Category>? Categories);
+
+public record CategoryViewModel(Fragment FragmentId, Category Category, IEnumerable<Category> Categories)
+{
+    public static CategoryViewModel ForCategory(Fragment fragmentId, Category category)
+        => new (fragmentId, category, Enumerable.Empty<Category>());
+    public static CategoryViewModel ForCategories(Fragment fragmentId, IEnumerable<Category> categories)
+        => new (fragmentId, Category.Empty, categories);
+}

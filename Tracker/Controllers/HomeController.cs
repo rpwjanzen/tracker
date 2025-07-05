@@ -7,13 +7,6 @@ namespace Tracker.Controllers;
 
 public class HomeController(DapperContext db) : Controller
 {
-    // private readonly ILogger<HomeController> _logger;
-    //
-    // public HomeController(ILogger<HomeController> logger)
-    // {
-    //     _logger = logger;
-    // }
-
     public IActionResult Index()
     {
         return View();
@@ -25,11 +18,10 @@ public class HomeController(DapperContext db) : Controller
         return View();
     }
 
-    [Route("reset-database")]
     public IActionResult ResetDatabase()
     {
         db.Reset();
-        return Ok();
+        return Redirect("/");
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
