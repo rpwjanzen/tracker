@@ -12,8 +12,8 @@ public record AddAccount(
     string Name,
     decimal CurrentBalance,
     DateOnly BalanceDate,
-    long KindId,
-    long BudgetKindId
+    long TypeId,
+    long BudgetTypeId
 );
 
 public record UpdateAccount(
@@ -28,40 +28,53 @@ public sealed record Account(
     string Name,
     decimal CurrentBalance,
     DateOnly BalanceDate,
-    AccountKind Kind,
-    BudgetKind BudgetKind
+    AccountType Type,
+    BudgetType BudgetType
 )
 {
-    public static readonly Account Empty = new(0L, string.Empty, 0m, default, AccountKind.Empty, BudgetKind.Empty);
+    // for Dapper
+    public Account(long id, string name) : this(id, name, 0M, default, AccountType.Empty, BudgetType.Empty)
+    {
+    }
+
+    public static readonly Account Empty = new(0L, string.Empty, 0m, default, AccountType.Empty, BudgetType.Empty);
 
     public static Account CreateNew(
         string name,
         decimal currentBalance,
         DateOnly balanceDate,
-        AccountKind kind,
-        BudgetKind budgetKind)
-        => new(0L, name, currentBalance, balanceDate, kind, budgetKind);
+        AccountType type,
+        BudgetType budgetType)
+        => new(0L, name, currentBalance, balanceDate, type, budgetType);
 
     public static Account CreateExisting(
         long id,
         string name,
         decimal currentBalance,
         DateOnly balanceDate,
-        AccountKind kind,
-        BudgetKind budgetKind)
-        => new(id, name, currentBalance, balanceDate, kind, budgetKind);
+        AccountType type,
+        BudgetType budgetType)
+        => new(id, name, currentBalance, balanceDate, type, budgetType);
 }
 
-public record AccountKind(long Id, string Name)
+public record AccountType(long Id, string Name)
 {
-    public static readonly AccountKind Empty = new (0L, string.Empty);
+    // for Dapper
+    public AccountType(): this(0L, string.Empty) {}
+    
+    public static readonly AccountType Empty = new (0L, string.Empty);
 }
 
-public record FetchAccountKindsQuery : IQuery<IEnumerable<AccountKind>>;
+public record FetchAccountKindsQuery : IQuery<IEnumerable<AccountType>>;
 
-public record BudgetKind(long Id, string Name)
+public record BudgetType(long Id, string Name)
 {
-    public static readonly BudgetKind Empty = new (0L, string.Empty);
+    // for Dapper
+    public BudgetType() : this(0L, string.Empty)
+    {
+    }
+
+    public static readonly BudgetType Empty = new (0L, string.Empty);
 }
 
-public record FetchBudgetKindsQuery : IQuery<IEnumerable<BudgetKind>>;
+public record FetchBudgetKindsQuery : IQuery<IEnumerable<BudgetType>>;

@@ -1,18 +1,113 @@
-﻿@model IEnumerable<Tracker.Domain.Account>
+﻿@using Tracker.Controllers
+@model Tracker.Controllers.AccountViewModel
 
 @{
     ViewData["Title"] = "Accounts";
 }
 
-<h1>Accounts: @Model.Sum(x => x.CurrentBalance).ToString("C")</h1>
-<ul>
-    @foreach (var account in Model)
+@{
+    switch (Model.FragmentId) 
     {
-        <li>
-            <a asp-controller="Accounts" asp-action="Index" asp-route-id="@account.Id">
-                @account.Name : @account.CurrentBalance.ToString("C")
-            </a>
-        </li>
+        case Fragment.New:
+            <tr hx-swap="outerHTML" hx-target="this">
+                @* TODO: determine if we need this when we have the script *@
+                <td>@Html.AntiForgeryToken()</td>
+                <td><input value="@Model.Account.Name" required name="name" autofocus=""/></td>
+                <td><input value="@Model.Account.CurrentBalance" required type="number" step="0.01"  name="currentBalance"/></td>
+                <td><input value="@Model.Account.BalanceDate" required type="date"  name="balanceDate"/></td>
+                <td>
+                    <select name="accountType" required>
+                        @foreach (var accountType in Model.AccountTypes)
+                        {
+                            <option value="@accountType.Id">@accountType.Name</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <select name="budgetType" required>
+                        @foreach (var (name, value) in Model.BudgetTypes)
+                        {
+                            <option value="@value">@name</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <button type="button" hx-get="accounts/cancel-add">Cancel</button>
+                </td>
+                <td>
+                    <button type="button" hx-post="accounts" hx-include="closest tr">Add</button>
+                </td>
+            </tr>
+            break;
+            
+        case Fragment.Details:
+            <partial name="Detail"/>
+            break;
+            
+        case Fragment.Edit:
+            <tr hx-swap="outerHTML" hx-target="this">
+                <td>@Html.AntiForgeryToken()</td>
+                <td><input value="@Model.Account.Name" required name="name" autofocus/></td>
+                <td></td>
+                <td></td>
+                <td>
+                    <select name="accountType" required>
+                        @foreach (var accountType in Model.AccountTypes)
+                        {
+                            <option value="@accountType.Id">@accountType.Name</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <select name="budgetType" required>
+                        @foreach (var budgetType in Model.BudgetTypes)
+                        {
+                            <option value="@budgetType.Id">@budgetType.Name</option>
+                        }
+                    </select>
+                </td>
+                <td>
+                    <button type="button" hx-get="accounts/@Model.Account.Id/cancel-edit">Cancel</button>
+                </td>
+                <td>
+                    <button type="button" hx-post="accounts" hx-include="closest tr">Add</button>
+                </td>
+            </tr>
+            break;
+            
+        case Fragment.List:
+            <button
+                hx-get="accounts/add"
+                hx-target="#accounts-table-body"
+                hx-swap="beforeend">
+                Add Account
+            </button>
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Current Balance</th>
+                    <th>Balance Date</th>
+                    <th>Type</th>
+                    <th>Budget Type</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody id="accounts-table-body">
+                @foreach (var account in Model.Accounts)
+                {
+                    <partial name="Detail" model="account"/>
+                }
+                </tbody>
+            </table>
+            <button
+                hx-get="accounts/add"
+                hx-target="#accounts-table-body"
+                hx-swap="beforeend">
+                Add Account
+            </button>
+            break;
     }
-</ul>
-<a asp-action="Add">Add Account</a>
+}

@@ -1,170 +1,209 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using Dapper;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
+using Tracker.Database;
 using Tracker.Domain;
 
 namespace Tracker.Controllers;
 
-public class AccountsController(
-    IQueryHandler<FetchAccountsQuery, IEnumerable<Account>> fetchAccounts,
-    IQueryHandler<FetchAccountQuery, Account?> fetchAccount,
-    IQueryHandler<FetchAccountKindsQuery, IEnumerable<AccountKind>> fetchAccountKinds,
-    IQueryHandler<FetchBudgetKindsQuery, IEnumerable<BudgetKind>> fetchBudgetKinds,
-    ICommandHandler<AddAccount> addAccount,
-    ICommandHandler<UpdateAccount> updateAccount
-) : Controller
+public class AccountsController(DapperContext db) : Controller
 {
-    // [HttpGet("/account")]
+        [HttpGet]
     public IActionResult Index()
     {
-        var accounts = fetchAccounts.Handle(new FetchAccountsQuery());
-        return View("Index", accounts);
+        using var connection = db.CreateConnection();
+        var accounts = connection.Query<Account, AccountType, BudgetType, Account>(
+            """
+            SELECT a.id as Id,
+                   a.name,
+                   account_type_id as Id,
+                   at.name as Name,
+                   budget_type_id as Id,
+                   bt.name as Name
+            FROM accounts a
+                JOIN account_types at ON at.id = a.account_type_id
+                JOIN budget_types bt ON bt.id = a.budget_type_id
+            ORDER BY a.id
+            """,
+            (account, accountType, budgetType) => account with { Type = accountType, BudgetType = budgetType },
+            splitOn: "Id"
+        );
+            
+        return View("Index", ForAccounts(Fragment.List, accounts));
     }
 
-    [HttpGet("{id:long}")] // manual path to avoid ambiguous handler method
+    [HttpGet("accounts/{id:long}")]
     public IActionResult Index(long id)
     {
-        var account = fetchAccount.Handle(new FetchAccountQuery(id));
-        if (account == null)
-        {
-            return NotFound();
-        }
-        return View("Detail", account);
+        var account = FetchAccount(id);
+        return PartialView("Index", ForAccount(Fragment.Details, account));
     }
-    
-    [HttpGet]
+
+    [HttpGet("accounts/add")]
     public IActionResult Add()
-    {
-        var dto = AddAccountViewModel.Empty;
-        PopulateSelects(dto);
-        return View("Add", dto);
-    }
-    
-    [HttpPost]
+        => PartialView(
+            "Index",
+            ForAccount(Fragment.New, Account.Empty with { BalanceDate = DateOnly.FromDateTime(DateTime.UtcNow) })
+        );
+
+    [HttpPost("accounts")]
     [ValidateAntiForgeryToken]
-    public IActionResult Add(AddAccountViewModel viewModel)
+    public IActionResult Add(AddAccountDto dto)
     {
-        if (!ModelState.IsValid)
-        {
-            // rerender form, showing errors to user
-            PopulateSelects(viewModel);
-            return View("Add", viewModel);
-        }
-
-        addAccount.Handle(new AddAccount(viewModel.Name, viewModel.CurrentBalance, viewModel.BalanceDate, viewModel.KindId, viewModel.BudgetKindId));
-        return RedirectToAction("Index");
+        // TODO: if not valid, return Add view with sent contents
+        using var connection = db.CreateConnection();
+        var accountId = connection.ExecuteScalar<long>(
+            """
+            INSERT INTO accounts (name, account_type_id, budget_type_id)
+            VALUES (@name, @accountType, @budgetType)
+            RETURNING id
+            """,
+            new { name = dto.Name, accountType = dto.AccountType, budgetType = dto.BudgetType }
+        );
+        
+        // create the initial financial transaction that provides the starting balance
+        connection.Execute(
+            """
+            INSERT INTO financial_transactions (posted_on, payee, amount, direction, memo, account_id, cleared_status) 
+            VALUES (@postedOn, @payee, @amount, @direction, @memo, @accountId, @clearedStatus)
+            """,
+            new
+            {
+                postedOn = dto.BalanceDate,
+                payee = "Initial Balance",
+                amount = dto.CurrentBalance,
+                direction = Direction.Inflow,
+                memo = string.Empty,
+                accountId = accountId,
+                clearedStatus = ClearedStatus.Cleared
+            }
+        );
+        
+        return PartialView("Index", ForAccount(
+            Fragment.Details,
+            new Account(accountId, dto.Name, dto.CurrentBalance, dto.BalanceDate, dto.AccountType, dto.BudgetType)
+        ));
     }
+
+    public record AddAccountDto(
+        string Name,
+        decimal CurrentBalance,
+        DateOnly BalanceDate,
+        AccountType AccountType,
+        BudgetType BudgetType
+    );
+
+    [HttpGet("accounts/cancel-add")]
+    public IActionResult CancelAdd() => Ok();
     
-    [HttpGet]
-    public IActionResult Edit(long id)
+    [HttpGet("accounts/{id:long}/edit")]
+    public IActionResult EditForm(long id)
     {
-        var account = fetchAccount.Handle(new FetchAccountQuery(id));
-        if (account == null)
-        {
-            return NotFound();
-        }
-
-        var viewModel = new EditAccountViewModel()
-        {
-            Id = account.Id,
-            Name = account.Name,
-            BalanceDate = account.BalanceDate,
-            CurrentBalance = account.CurrentBalance,
-            BudgetKindId = account.BudgetKind.Id,
-            KindId = account.Kind.Id,
-        };
-        PopulateSelects(viewModel);
-        return View("Edit", viewModel);
+        var account = FetchAccount(id);
+        return PartialView("Index", ForAccount(Fragment.Edit, account));
     }
+
+    public record EditAccountDto(
+        string Name,
+        AccountType AccountType,
+        BudgetType BudgetType
+    );
     
-    [HttpPost]
+    [HttpPut("accounts/{id:long}")]
     [ValidateAntiForgeryToken]
-    public IActionResult Edit(EditAccountViewModel viewModel)
+    public IActionResult Edit(long id, EditAccountDto dto)
     {
-        if (!ModelState.IsValid)
-        {
-            // rerender form, showing errors to user
-            PopulateSelects(viewModel);
-            return View("Edit", viewModel);
-        }
-
-        updateAccount.Handle(new UpdateAccount(viewModel.Id, viewModel.Name, viewModel.KindId, viewModel.BudgetKindId));
-        return RedirectToAction("Index");
+        using var connection = db.CreateConnection();
+        connection.Execute(
+"""
+UPDATE accounts
+SET name = @name,
+    account_type_id = @accountTypeId,
+    budget_type_id = @budgetTypeId
+WHERE id = @id 
+""",
+            new
+            {
+                id = id,
+                name = dto.Name,
+                accountTypeId = dto.AccountType,
+                budgetTypeId = dto.BudgetType
+            }
+        );
+        
+        var account = FetchAccount(id);
+        return PartialView("Index", ForAccount(Fragment.Details, account));
     }
 
-    [HttpPost]
+    [HttpGet("accounts/{id:long}/cancel-edit")]
+    public IActionResult CancelEdit(long id)
+    {
+        var account = FetchAccount(id);
+        return PartialView("Index", ForAccount(Fragment.Details, account));
+    }
+
+    [HttpDelete("accounts/{id:long}")]
     [ValidateAntiForgeryToken]
-    public IActionResult Archive(long id)
+    public IActionResult Delete(long id)
     {
-        return RedirectToAction("Index");
+        using var connection = db.CreateConnection();
+        connection.Execute("DELETE FROM accounts WHERE id = @id", new { id = id });
+        return Ok();
     }
 
-    private void PopulateSelects(AddAccountViewModel viewModel)
+    private Account FetchAccount(long id)
     {
-        viewModel.Kinds = fetchAccountKinds.Handle(new FetchAccountKindsQuery())
-            .Select(x => new SelectListItem(x.Name, x.Id.ToString(), x.Id == viewModel.KindId));
-        viewModel.BudgetKinds = fetchBudgetKinds.Handle(new FetchBudgetKindsQuery())
-            .Select(x => new SelectListItem(x.Name, x.Id.ToString(), x.Id == viewModel.BudgetKindId));
+        using var connection = db.CreateConnection();
+        return connection.QueryFirst<Account>(
+            "SELECT id, name, account_type_id, budget_type_id FROM accounts WHERE id = @id",
+            new { id = id }
+        );
     }
     
-    private void PopulateSelects(EditAccountViewModel viewModel)
+    private IEnumerable<AccountType> FetchAccountTypes()
     {
-        viewModel.Kinds = fetchAccountKinds.Handle(new FetchAccountKindsQuery())
-            .Select(x => new SelectListItem(x.Name, x.Id.ToString(), x.Id == viewModel.KindId));
-        viewModel.BudgetKinds = fetchBudgetKinds.Handle(new FetchBudgetKindsQuery())
-            .Select(x => new SelectListItem(x.Name, x.Id.ToString(), x.Id == viewModel.BudgetKindId));
+        using var connection = db.CreateConnection();
+        return connection.Query<AccountType>("SELECT id, name FROM account_types ORDER BY name");
     }
+    
+    private IEnumerable<BudgetType> FetchBudgetTypes()
+    {
+        using var connection = db.CreateConnection();
+        return connection.Query<BudgetType>("SELECT id, name FROM budget_types ORDER BY name");
+    }
+    
+    private AccountViewModel ForAccount(
+        Fragment fragment,
+        Account account
+    ) => AccountViewModel.ForAccount(fragment, account, FetchAccountTypes(), FetchBudgetTypes());
+    
+    private AccountViewModel ForAccounts(
+        Fragment fragment,
+        IEnumerable<Account> accounts
+    ) => AccountViewModel.ForAccounts(fragment, accounts, FetchAccountTypes(), FetchBudgetTypes());
 }
 
-public class AddAccountViewModel
+public record AccountViewModel(
+    Fragment FragmentId,
+    Account Account,
+    IEnumerable<Account> Accounts,
+    IEnumerable<AccountType> AccountTypes,
+    IEnumerable<BudgetType> BudgetTypes
+)
 {
-    [Required]
-    public string Name { get; set; } = string.Empty;
+    public static AccountViewModel ForAccount(
+        Fragment fragment,
+        Account account,
+        IEnumerable<AccountType> accountTypes,
+        IEnumerable<BudgetType> budgetTypes
+    ) => new(fragment, account, Enumerable.Empty<Account>(), accountTypes, budgetTypes);
     
-    [DisplayName(displayName: "Current Balance")]
-    public decimal CurrentBalance { get; set; }
-
-    [DisplayName(displayName: "Balance Date")]
-    [DataType(DataType.Date)]
-    public DateOnly BalanceDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
-    
-    [DisplayName(displayName: "Kind")]
-    public long KindId { get; set; }
-    
-    [DisplayName(displayName: "Budget Kind")]
-    public long BudgetKindId { get; set; }
-
-    public static readonly AddAccountViewModel Empty = new();
-    public IEnumerable<SelectListItem> Kinds { get; set; } = Enumerable.Empty<SelectListItem>();
-    public IEnumerable<SelectListItem> BudgetKinds { get; set; } = Enumerable.Empty<SelectListItem>();
-}
-
-public class EditAccountViewModel
-{
-    [Required]
-    public long Id { get; set; }
-    
-    [Required]
-    public string Name { get; set; } = string.Empty;
-    
-    [DisplayName(displayName: "Current Balance")]
-    public decimal CurrentBalance { get; set; }
-
-    [DisplayName(displayName: "Balance Date")]
-    [DataType(DataType.Date)]
-    public DateOnly BalanceDate { get; set; } = DateOnly.FromDateTime(DateTime.Now);
-    
-    [DisplayName(displayName: "Kind")]
-    public long KindId { get; set; }
-    
-    [DisplayName(displayName: "Budget Kind")]
-    public long BudgetKindId { get; set; }
-
-    public static readonly EditAccountViewModel Empty = new();
-    public IEnumerable<SelectListItem> Kinds { get; set; } = Enumerable.Empty<SelectListItem>();
-    public IEnumerable<SelectListItem> BudgetKinds { get; set; } = Enumerable.Empty<SelectListItem>();
+    public static AccountViewModel ForAccounts(
+        Fragment fragment,
+        IEnumerable<Account> accounts,
+        IEnumerable<AccountType> accountTypes,
+        IEnumerable<BudgetType> budgetTypes
+    ) => new(fragment, Account.Empty, accounts, accountTypes, budgetTypes);
 }

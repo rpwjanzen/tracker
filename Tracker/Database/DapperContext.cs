@@ -20,7 +20,7 @@ public class DapperContext
         SqlMapper.AddTypeHandler(new GuidHandler());
         SqlMapper.AddTypeHandler(new TimeSpanHandler());
         // SqlMapper.AddTypeHandler(new DecimalHandler());
-        Reset();
+        // Reset();
     }
 
     public SqliteConnection CreateConnection()
@@ -29,7 +29,9 @@ public class DapperContext
         conn.Open();
         
         // enable foreign keys as they are not on by default
-        conn.Execute("PRAGMA foreign_keys = ON;");
+        conn.Execute("PRAGMA foreign_keys = ON; PRAGMA journal_mode = 'wal'");
+        // MOAR performance
+        conn.Execute("PRAGMA journal_mode = 'wal'");
         
         return conn;
     }
@@ -51,12 +53,12 @@ public class DapperContext
 CREATE TABLE IF NOT EXISTS account_types (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL
-);
+) STRICT ;
 
 CREATE TABLE IF NOT EXISTS budget_types (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS accounts (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -65,18 +67,18 @@ CREATE TABLE IF NOT EXISTS accounts (
     budget_type_id TEXT NOT NULL,
     FOREIGN KEY (account_type_id) REFERENCES account_types(id),
     FOREIGN KEY (budget_type_id) REFERENCES budget_types(id)
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS categories (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS envelopes (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT ,
     month TEXT NOT NULL,
     amount TEXT NOT NULL
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS financial_transactions (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -87,7 +89,7 @@ CREATE TABLE IF NOT EXISTS financial_transactions (
     memo TEXT NOT NULL,
     account_id INTEGER NOT NULL,
     cleared_status TEXT NOT NULL
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS financial_transactions_envelopes (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -95,7 +97,7 @@ CREATE TABLE IF NOT EXISTS financial_transactions_envelopes (
     envelope_id INTEGER NOT NULL,
     FOREIGN KEY (financial_transaction_id) REFERENCES financial_transactions(id),
     FOREIGN KEY (envelope_id) REFERENCES envelopes(id)
-);
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS categories_envelopes (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -103,7 +105,7 @@ CREATE TABLE IF NOT EXISTS categories_envelopes (
     envelope_id INTEGER NOT NULL,
     FOREIGN KEY (category_id) REFERENCES categories(id),
     FOREIGN KEY (envelope_id) REFERENCES envelopes(id)
-);
+) STRICT;
 """;
         connection.Execute(sql);
         connection.Close();
@@ -185,7 +187,6 @@ DROP TABLE IF EXISTS budget_types;
             parameters.Add(parameter);
         }
 
-        var parameterKeys = parameters.Select(x => x.ParameterName).ToList();
         // yes, we support SQL injection from CSV files.
         var keyNames = string.Join(',', headers);
         var keyParams = string.Join(',', headers.Select(x => '@' + x));

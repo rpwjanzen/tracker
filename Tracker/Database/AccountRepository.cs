@@ -45,8 +45,8 @@ public class AccountsRepository(DapperContext context) :
             x.name,
             (decimal)x.current_balance,
             DateOnly.Parse(x.balance_date),
-            new AccountKind(x.account_type_id, x.account_type_name),
-            new BudgetKind(x.budget_type_id, x.budget_type_name)
+            new AccountType(x.account_type_id, x.account_type_name),
+            new BudgetType(x.budget_type_id, x.budget_type_name)
         ));
         return accounts;
     }
@@ -87,8 +87,8 @@ public class AccountsRepository(DapperContext context) :
             row.name,
             (decimal)row.balance,
             DateOnly.Parse(row.date),
-            new AccountKind(row.account_type_id, row.account_type_name),
-            new BudgetKind(row.budget_type_id, row.budget_type_name)
+            new AccountType(row.account_type_id, row.account_type_name),
+            new BudgetType(row.budget_type_id, row.budget_type_name)
         );
     }
 
@@ -101,8 +101,8 @@ public class AccountsRepository(DapperContext context) :
             new
             {
                 name = command.Name.ToString(),
-                type = command.KindId,
-                budgetKind = command.BudgetKindId
+                type = command.TypeId,
+                budgetKind = command.BudgetTypeId
             }
         );
         var transactionId = connection.QueryFirst<long>(
@@ -139,18 +139,18 @@ public class AccountsRepository(DapperContext context) :
     }
 }
 
-public class FetchBudgetKindsHandler : IDbQueryHandler<FetchBudgetKindsQuery, IEnumerable<BudgetKind>>
+public class FetchBudgetKindsHandler : IDbQueryHandler<FetchBudgetKindsQuery, IEnumerable<BudgetType>>
 {
-    public IEnumerable<BudgetKind> Handle(FetchBudgetKindsQuery query, System.Data.IDbConnection connection)
+    public IEnumerable<BudgetType> Handle(FetchBudgetKindsQuery query, System.Data.IDbConnection connection)
     {
-        return connection.Query<BudgetKind>("SELECT id, name FROM budget_types ORDER BY id");
+        return connection.Query<BudgetType>("SELECT id, name FROM budget_types ORDER BY id");
     }
 }
 
-public class FetchAccountKindsHandler : IDbQueryHandler<FetchAccountKindsQuery, IEnumerable<AccountKind>>
+public class FetchAccountKindsHandler : IDbQueryHandler<FetchAccountKindsQuery, IEnumerable<AccountType>>
 {
-    public IEnumerable<AccountKind> Handle(FetchAccountKindsQuery query, System.Data.IDbConnection connection)
+    public IEnumerable<AccountType> Handle(FetchAccountKindsQuery query, System.Data.IDbConnection connection)
     {
-        return connection.Query<AccountKind>("SELECT id, name FROM account_types ORDER BY id");
+        return connection.Query<AccountType>("SELECT id, name FROM account_types ORDER BY id");
     }
 }

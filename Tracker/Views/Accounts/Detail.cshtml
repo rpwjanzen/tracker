@@ -1,34 +1,22 @@
-@using Tracker.Domain
 @model Tracker.Domain.Account
 
-<dl style="display: grid; grid-template-columns: repeat(2, max-content);">
-    <dt>ID</dt>
-    <dd>@Model.Id</dd>
-
-    <dt>Name</dt>
-    <dd>@Model.Name</dd>
-
-    <dt>Kind</dt>
-    <dd>@Model.Kind.Name</dd>
-
-    <dt>Budget Kind</dt>
-    <dd>@Model.BudgetKind.Name</dd>
-
-    <dt>Balance</dt>
-    <dd>@Model.CurrentBalance.ToString("C")</dd>
-
-    <dt>Balance Date</dt>
-    <dd>@Model.BalanceDate</dd>
-</dl>
-<section class="tool-bar">
-    <form asp-action="Edit" asp-route-id="@Model.Id" method="get">
-        <button>Edit</button>
-    </form>
-    <form asp-action="Archive" asp-route-id="@Model.Id">
-        <button>Archive</button>
-    </form>
-    <form asp-controller="FinancialTransactions" asp-action="Index" method="get">
-        <!-- TODO: use query parameter to filter to account -->
-        <button>View Transactions</button>
-    </form>
-</section>
+<tr hx-target="this" hx-swap="outerHTML">
+    <td>@Model.Id</td>
+    <td>@Model.Name</td>
+    <td>@Model.CurrentBalance</td>
+    <td>@Model.BalanceDate</td>
+    <td>@Model.Type</td>
+    <td>@Model.BudgetType</td>
+    <td>
+        <button hx-get="accounts/@Model.Id/edit">
+            Edit
+        </button>
+    </td>
+    <td>
+        <button 
+            hx-delete="accounts/@Model.Id"
+            hx-confirm="Delete account?">
+            Delete
+        </button>
+    </td>
+</tr>

@@ -8,75 +8,96 @@
     switch (Model.FragmentId)
     {
         case Fragment.New:
-            <tr class="editing" hx-target="this" hx-swap="outerHTML">
-                <td>@Model.Category!.Id @Html.AntiForgeryToken()</td>
-                <td><input value="@Model.Category.Name" required="required" name="name" autofocus="autofocus"/></td>
-                <td>
-                    <button hx-get="@Url.Action("CancelAdd", "Categories")">
-                        Cancel
-                    </button>
-                </td>
-                <td>
-                    <button hx-post="@Url.Action("Index", "Categories")"
-                            hx-include="closest tr">
-                        Add Category
-                    </button>
-                </td>
-            </tr>
-            break;
+<tr 
+class=editing 
+hx-target=this 
+hx-swap=outerHTML>
+<td>
+@Model.Category!.Id @Html.AntiForgeryToken()
+<td>
+<input
+    name=name
+    value="@Model.Category.Name" 
+    required 
+    autofocus
+    hx-post=categories
+    hx-include="closest tr"
+    hx-trigger="keydown[key=='Enter']"
+/>
+<td>
+<button hx-get=categories/cancel-add>
+Cancel
+</button>
+<td>
+<button 
+hx-post=categories
+hx-include="closest tr">
+Add Category
+</button>
+</td>
+</tr>
+        break;
             
         case Fragment.Edit:
-            <tr class="editing" hx-target="this" hx-swap="outerHTML">
-                <td>@Model.Category!.Id @Html.AntiForgeryToken()</td>
-                <td><input value="@Model.Category.Name" required="required" name="name"/></td>
-                <td>
-                    <button hx-get="/categories/@Model.Category.Id/cancel-edit">
-                        Cancel
-                    </button>
-                </td>
-                <td>
-                    <button hx-patch="@Url.Action("Edit", "Categories", new { id = Model.Category.Id })" hx-include="closest tr">
-                        Save
-                    </button>
-                </td>
-            </tr>
-            break;
+<tr class=editing hx-target=this hx-swap=outerHTML>
+<td>
+@Model.Category!.Id @Html.AntiForgeryToken()
+<td>
+<input
+    name=name
+    value="@Model.Category.Name"
+    required
+    autofocus 
+    hx-patch=categories/@Model.Category.Id
+    hx-include="closest tr"
+    hx-trigger="keydown[key=='Enter']" />
+<td>
+<button hx-get="categories/@Model.Category.Id/cancel-edit">
+Cancel
+</button>
+<td>
+<button 
+hx-patch=categories/@Model.Category.Id 
+hx-include="closest tr">
+Save
+</button>
+</td>
+</tr>
+        break;
             
         case Fragment.List:
-            <button
-                hx-get="@Url.Action("Add", "Categories")"
-                hx-target="#categories-table-body"
-                hx-swap="beforeend">
-                Add New Category
-            </button>
+<button
+hx-get=categories/add
+hx-target=#categories-table-body
+hx-swap=beforeend>
+Add New Category
+</button>
 
-            <table>
-                <caption>Categories</caption>
-                <thead>
-                <tr>
-                    <th></th>
-                    <th>Name</th>
-                    <th></th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody id="categories-table-body">
-                @foreach (var category in Model.Categories!)
-                {
-                    <partial name="Details" model="category"/>
-                }
-                </tbody>
-            </table>
-            <button
-                hx-get="@Url.Action("Add", "Categories")"
-                hx-target="#categories-table-body"
-                hx-swap="beforeend">
-                Add New Category
-            </button>
+<table>
+<caption>Categories</caption>
+<thead>
+<tr>
+<th>
+<th>
+Name
+<th>
+<th>
+<tbody id="categories-table-body">
+@foreach (var category in Model.Categories!)
+{
+<partial name="Details" model="category"/>
+}
+</table>
+<button
+hx-get=categories/add
+hx-target=#categories-table-body
+hx-swap=beforeend>
+Add New Category
+</button>
             break;
             
         case Fragment.Details:
-            <partial name="Details" model="Model.Category"/>
+<partial name="Details" model="Model.Category"/>
             break;
             
         default:
