@@ -50,9 +50,7 @@
             break;
             
         case Fragment.New:
-            <div class="box">
-                <strong class="block titlebar">Add Transaction</strong>
-                <form method="post" class="table rows">
+                <form method="post">
                     <div>
                         <label for="postedOn">Posted On</label>
                         <input type="date" required name="postedOn" id="postedOn" value="@Model.Transaction.PostedOn"/>
@@ -101,13 +99,10 @@
                         <a href="/financial-transactions">Cancel</a>
                     </div>
                 </form>
-            </div>
             break;
             
         case Fragment.Edit:
-            <div class="box">
-                <strong class="block titlebar">Add Transaction</strong>
-                <form method="post" class="table rows">
+                <form method="post">
                     <div>
                         <label for="postedOn">Posted On</label>
                         <input type="date" required name="postedOn" id="postedOn" value="@Model.Transaction.PostedOn"/>
@@ -178,7 +173,6 @@
                         <a href="/financial-transactions">Cancel</a>
                     </div>
                 </form>
-            </div>
             break;
             
         case Fragment.Details:

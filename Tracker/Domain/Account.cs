@@ -39,6 +39,7 @@ public sealed record Account(
     }
     
     public static readonly Account Empty = new(0L, string.Empty, 0m, default, AccountType.Empty, BudgetType.Empty);
+    public static readonly Account Unspecified = Empty with { Name = "Unspecified" };
 
     public static Account CreateNew(
         string name,

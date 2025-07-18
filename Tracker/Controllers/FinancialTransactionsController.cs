@@ -123,24 +123,7 @@ public class FinancialTransactionsController(DapperContext db): Controller
     public IActionResult Add(AddFinancialTransactionDto dto)
     {
         using var connection = db.CreateConnection();
-        connection.ExecuteScalar<long>(
-            """
-            INSERT INTO financial_transactions (posted_on, payee, amount, direction, memo, account_id, cleared_status_id, category_id)
-            VALUES (@postedOn, @payee, @amount, @direction, @memo, @accountId, @clearedStatus, @categoryId)
-            RETURNING id
-            """,
-            new
-            {
-                postedOn = dto.PostedOn,
-                payee = dto.Payee ?? string.Empty,
-                amount = dto.Amount,
-                direction = dto.Direction,
-                memo = dto.Memo ?? string.Empty,
-                accountId = dto.AccountId,
-                clearedStatus = dto.ClearedStatusId,
-                categoryId = dto.CategoryId
-            }
-        );
+        AddFinancialTransaction(dto, connection);
 
         return RedirectToAction("Index");
     }
@@ -227,6 +210,9 @@ public class FinancialTransactionsController(DapperContext db): Controller
         return Redirect("/financial-transactions");
     }
 
+    private IEnumerable<AccountView> FetchAccountViews(IDbConnection connection)
+        => connection.Query<AccountView>("SELECT id, name FROM accounts ORDER BY id");
+    
     private FinancialTransactionView? FetchFinancialTransaction(long id, IDbConnection connection)
     {
         var transactionViews = connection.Query<FinancialTransactionView, AccountView, Category, ClearedStatus, FinancialTransactionView>(
@@ -247,30 +233,39 @@ public class FinancialTransactionsController(DapperContext db): Controller
         return transactionViews.FirstOrDefault();
     }
 
-    [HttpGet]
-    public IActionResult Import() => this.HtmxView("Import");
-
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Import(FileUploadModel model)
+    [HttpGet("/financial-transactions/import")]
+    public IActionResult Import()
     {
-        if (model.File is not { Length: > 0 })
+        using var connection = db.CreateConnection();
+        return View("Import", new ImportTransactionsViewModel { Accounts = FetchAccountViews(connection) });
+    }
+
+    [HttpPost("/financial-transactions/import")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Import(ImportTransactionsDto dto)
+    {
+        if (dto.AccountId == 0)
+        {
+            return BadRequest("Must select account.");
+        }
+        
+        if (dto.File is not { Length: > 0 })
         {
             return BadRequest("File upload failed.");
         }
 
-        var filePath = Path.Combine("wwwroot/uploads", model.File.FileName);
+        var filePath = Path.Combine("wwwroot/uploads", dto.File.FileName);
         await using (var stream = new FileStream(filePath, FileMode.Create))
         {
-            await model.File.CopyToAsync(stream);
+            await dto.File.CopyToAsync(stream);
         }
 
-        ImportBmoTransactions(filePath);
+        ImportBmoTransactions(filePath, dto.AccountId);
 
-        return RedirectToAction("Index");
+        return Redirect("/financial-transactions");
     }
 
-    private void ImportBmoTransactions(string filePath)
+    private void ImportBmoTransactions(string filePath, long accountId)
     {
         var options = new JsonSerializerOptions
         {
@@ -281,8 +276,24 @@ public class FinancialTransactionsController(DapperContext db): Controller
         var response = JsonSerializer.Deserialize<BmoTransactionsResponse>(text, options);
         Trace.Assert(response is not null);
         var transactions = response.GetBankAccountDetailsRs.BodyResponse.BankAccountTransaction
-            .Select(t => new AddFinancialTransaction(0L, t.TransactionDate, t.Description, null, string.Empty, t.Amount, Direction.Inflow, default));
-        // importTransactions.Handle(new ImportTransactions(transactions));
+            .Select(x => new AddFinancialTransactionDto
+            {
+                AccountId = accountId,
+                Amount = Math.Abs(x.Amount),
+                CategoryId = x.Amount > 0 ? Category.Income.Id : Category.Uncategorized.Id,
+                ClearedStatusId = ClearedStatus.Cleared.Id,
+                Direction = x.Amount >= 0 ? Direction.Inflow : Direction.Outflow,
+                Memo = string.Empty,
+                Payee = FixWhitespace(x.Description),
+                PostedOn = x.TransactionDate
+            });
+        using var connection = db.CreateConnection();
+        AddFinancialTransactions(transactions, connection);
+    }
+
+    private string FixWhitespace(string text)
+    {
+        return string.Join(' ', text.Split(' ', StringSplitOptions.RemoveEmptyEntries));
     }
     
     private FinancialTransactionsViewModel ForTransactions(
@@ -324,12 +335,49 @@ public class FinancialTransactionsController(DapperContext db): Controller
             clearedStatusViews
         );
     }
+
+    private void AddFinancialTransaction(AddFinancialTransactionDto dto, IDbConnection connection)
+    {
+        connection.Execute(
+            """
+            INSERT INTO financial_transactions (posted_on, payee, amount, direction, memo, account_id, cleared_status_id, category_id)
+            VALUES (@postedOn, @payee, @amount, @direction, @memo, @accountId, @clearedStatus, @categoryId)
+            """,
+            new
+            {
+                postedOn = dto.PostedOn,
+                payee = dto.Payee ?? string.Empty,
+                amount = dto.Amount,
+                direction = dto.Direction,
+                memo = dto.Memo ?? string.Empty,
+                accountId = dto.AccountId,
+                clearedStatus = dto.ClearedStatusId,
+                categoryId = dto.CategoryId
+            }
+        );
+    }
+    
+    private void AddFinancialTransactions(IEnumerable<AddFinancialTransactionDto> dtos, IDbConnection connection)
+    {
+        foreach (var dto in dtos)
+        {
+            AddFinancialTransaction(dto, connection);
+        }
+    }
 }
 
-public class FileUploadModel
+public class ImportTransactionsDto
 {
+    public long AccountId { get; set; }
     public IFormFile? File { get; set; }
 }
+
+public class ImportTransactionsViewModel
+{
+    public long AccountId { get; set; }
+    public IEnumerable<AccountView> Accounts { get; set; }
+}
+
 
 public class BmoTransactionsResponse
 {

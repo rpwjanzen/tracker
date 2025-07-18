@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Dapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Tracker.Database;
 using Tracker.Domain;
@@ -58,7 +59,7 @@ public class AccountsController(DapperContext db) : Controller
     {
         // TODO: if not valid, return Add view with sent contents
         using var connection = db.CreateConnection();
-        var accountId = connection.ExecuteScalar<long>(
+        connection.ExecuteScalar<long>(
             """
             INSERT INTO accounts (name, account_type_id, budget_type_id)
             VALUES (@name, @accountType, @budgetType)
@@ -200,3 +201,4 @@ public record AccountViewModel(
         IEnumerable<BudgetType> budgetTypes
     ) => new(fragment, Account.Empty, accounts, accountTypes, budgetTypes);
 }
+

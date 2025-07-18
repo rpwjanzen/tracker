@@ -16,8 +16,4 @@
       <PackageReference Include="SimpleInjector.Integration.AspNetCore.Mvc" Version="5.5.0" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="wwwroot\lib\" />
-    </ItemGroup>
-
 </Project>

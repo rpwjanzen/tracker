@@ -1,17 +1,25 @@
-﻿@model Tracker.Controllers.FileUploadModel
+﻿@model Tracker.Controllers.ImportTransactionsViewModel
 
 @{
     ViewData["Title"] = "Import Financial Transactions";
 }
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Import Financial Transactions</title>
-</head>
-<body>
-<form asp-controller="FinancialTransactions" asp-action="Import" method="post" enctype="multipart/form-data">
-    <input type="file" asp-for="File" />
-    <button type="submit">Upload</button>
+
+<form method="post" enctype="multipart/form-data" class="table rows">
+    <div>
+        <label for="accountId">Account</label>
+        <select id="accountId" name="accountId" required>
+            @foreach (var account in Model.Accounts)
+            {
+                <option value="@account.Id">@account.Name</option>
+            }
+        </select>
+    </div>
+    <div>
+        <label for="file">JSON File</label>
+        <input type="file" name="file" id="file"/>
+    </div>
+    <div>
+        <button type="submit">Import</button>
+        <a href="/financial-transactions">Cancel</a>
+    </div>
 </form>  
-</body>
-</html>

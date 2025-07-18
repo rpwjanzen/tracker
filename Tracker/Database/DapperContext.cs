@@ -138,6 +138,7 @@ DROP TABLE IF EXISTS cleared_statuses;
         ImportCsv(connection, "budget_types");
         ImportCsv(connection, "cleared_statuses");
         // ImportEnvelopes(connection);
+        ImportCsv(connection, "accounts");
 
         connection.Close();
     }
