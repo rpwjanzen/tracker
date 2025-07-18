@@ -10,7 +10,7 @@ namespace Tracker.Controllers;
 
 public class AccountsController(DapperContext db) : Controller
 {
-        [HttpGet]
+    [HttpGet]
     public IActionResult Index()
     {
         using var connection = db.CreateConnection();
@@ -18,6 +18,8 @@ public class AccountsController(DapperContext db) : Controller
             """
             SELECT a.id as Id,
                    a.name,
+                   SUM(ft.amount) AS currentBalance,
+                   MAX(ft.posted_on) AS balanceDate,
                    account_type_id as Id,
                    at.name as Name,
                    budget_type_id as Id,
@@ -25,6 +27,8 @@ public class AccountsController(DapperContext db) : Controller
             FROM accounts a
                 JOIN account_types at ON at.id = a.account_type_id
                 JOIN budget_types bt ON bt.id = a.budget_type_id
+                LEFT JOIN financial_transactions ft ON ft.account_id = a.id
+            GROUP BY a.id, a.name, account_type_id, at.name, budget_type_id, bt.name
             ORDER BY a.id
             """,
             (account, accountType, budgetType) => account with { Type = accountType, BudgetType = budgetType },
@@ -38,17 +42,17 @@ public class AccountsController(DapperContext db) : Controller
     public IActionResult Index(long id)
     {
         var account = FetchAccount(id);
-        return PartialView("Index", ForAccount(Fragment.Details, account));
+        return View("Index", ForAccount(Fragment.Details, account));
     }
 
     [HttpGet("accounts/add")]
     public IActionResult Add()
-        => PartialView(
+        => View(
             "Index",
             ForAccount(Fragment.New, Account.Empty with { BalanceDate = DateOnly.FromDateTime(DateTime.UtcNow) })
         );
 
-    [HttpPost("accounts")]
+    [HttpPost("accounts/add")]
     [ValidateAntiForgeryToken]
     public IActionResult Add(AddAccountDto dto)
     {
@@ -60,58 +64,31 @@ public class AccountsController(DapperContext db) : Controller
             VALUES (@name, @accountType, @budgetType)
             RETURNING id
             """,
-            new { name = dto.Name, accountType = dto.AccountType, budgetType = dto.BudgetType }
+            new { name = dto.Name, accountType = dto.AccountTypeId, budgetType = dto.BudgetTypeId }
         );
-        
-        // create the initial financial transaction that provides the starting balance
-        connection.Execute(
-            """
-            INSERT INTO financial_transactions (posted_on, payee, amount, direction, memo, account_id, cleared_status) 
-            VALUES (@postedOn, @payee, @amount, @direction, @memo, @accountId, @clearedStatus)
-            """,
-            new
-            {
-                postedOn = dto.BalanceDate,
-                payee = "Initial Balance",
-                amount = dto.CurrentBalance,
-                direction = Direction.Inflow,
-                memo = string.Empty,
-                accountId = accountId,
-                clearedStatus = ClearedStatus.Cleared
-            }
-        );
-        
-        return PartialView("Index", ForAccount(
-            Fragment.Details,
-            new Account(accountId, dto.Name, dto.CurrentBalance, dto.BalanceDate, dto.AccountType, dto.BudgetType)
-        ));
+        return Redirect("/accounts");
     }
 
     public record AddAccountDto(
         string Name,
-        decimal CurrentBalance,
-        DateOnly BalanceDate,
-        AccountType AccountType,
-        BudgetType BudgetType
+        long AccountTypeId,
+        long BudgetTypeId
     );
 
-    [HttpGet("accounts/cancel-add")]
-    public IActionResult CancelAdd() => Ok();
-    
     [HttpGet("accounts/{id:long}/edit")]
     public IActionResult EditForm(long id)
     {
         var account = FetchAccount(id);
-        return PartialView("Index", ForAccount(Fragment.Edit, account));
+        return View("Index", ForAccount(Fragment.Edit, account));
     }
 
     public record EditAccountDto(
         string Name,
-        AccountType AccountType,
-        BudgetType BudgetType
+        long AccountTypeId,
+        long BudgetTypeId
     );
     
-    [HttpPut("accounts/{id:long}")]
+    [HttpPost("accounts/{id:long}/edit")]
     [ValidateAntiForgeryToken]
     public IActionResult Edit(long id, EditAccountDto dto)
     {
@@ -128,38 +105,54 @@ WHERE id = @id
             {
                 id = id,
                 name = dto.Name,
-                accountTypeId = dto.AccountType,
-                budgetTypeId = dto.BudgetType
+                accountTypeId = dto.AccountTypeId,
+                budgetTypeId = dto.BudgetTypeId
             }
         );
         
-        var account = FetchAccount(id);
-        return PartialView("Index", ForAccount(Fragment.Details, account));
+        return Redirect("/accounts");
     }
 
-    [HttpGet("accounts/{id:long}/cancel-edit")]
-    public IActionResult CancelEdit(long id)
-    {
-        var account = FetchAccount(id);
-        return PartialView("Index", ForAccount(Fragment.Details, account));
-    }
-
-    [HttpDelete("accounts/{id:long}")]
+    [HttpGet("accounts/{id:long}/delete")]
+    public IActionResult DeleteForm(long id)
+        => View("Index", ForAccount(Fragment.Delete, FetchAccount(id)));
+    
+    [HttpPost("accounts/{id:long}/delete")]
     [ValidateAntiForgeryToken]
     public IActionResult Delete(long id)
     {
         using var connection = db.CreateConnection();
+        connection.Execute("DELETE FROM financial_transactions WHERE account_id = @id", new { id = id });
         connection.Execute("DELETE FROM accounts WHERE id = @id", new { id = id });
-        return Ok();
+        return Redirect("/accounts");
     }
 
     private Account FetchAccount(long id)
     {
         using var connection = db.CreateConnection();
-        return connection.QueryFirst<Account>(
-            "SELECT id, name, account_type_id, budget_type_id FROM accounts WHERE id = @id",
-            new { id = id }
-        );
+        return connection.Query<Account, AccountType, BudgetType, Account>(
+            """
+            SELECT a.id as Id,
+                   a.name,
+                   COALESCE(SUM(ft.amount), 0.00) as currentBalance,
+                   MAX(ft.posted_on) as balanceDate,
+                   account_type_id as Id,
+                   at.name,
+                   budget_type_id as Id,
+                   bt.name
+            FROM accounts a
+                JOIN account_types at ON at.id = a.account_type_id
+                JOIN budget_types bt ON bt.id = a.budget_type_id
+                LEFT JOIN financial_transactions ft ON ft.account_id = a.id
+            WHERE a.id = @id
+            GROUP BY a.id, a.name, account_type_id, at.name, budget_type_id, bt.name
+            ORDER BY a.id
+            LIMIT 1
+            """,
+            (account, accountType, budgetType) => account with { Type = accountType, BudgetType = budgetType },
+            new { id = id },
+            splitOn: "Id"
+        ).First();
     }
     
     private IEnumerable<AccountType> FetchAccountTypes()

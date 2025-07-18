@@ -46,6 +46,7 @@ services.AddSimpleInjector(container, options =>
     // options.AddLogging();
     // options.AddLocalization();
 });
+services.AddServerTiming();
 
 // Add services to the container.
 container.Register<DapperContext>(Lifestyle.Scoped);
@@ -76,6 +77,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseAuthorization();
+app.UseServerTiming();
 
 app.UseStaticFiles();
 app.MapStaticAssets();

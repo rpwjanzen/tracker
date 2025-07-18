@@ -3,6 +3,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using Dapper;
+using Lib.ServerTiming;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 
@@ -11,28 +12,31 @@ namespace Tracker.Database;
 public class DapperContext
 {
     private readonly string _connectionString;
+    private readonly IServerTiming _serverTiming;
 
-    public DapperContext(IConfiguration configuration)
+    public DapperContext(IConfiguration configuration, IServerTiming serverTiming)
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")!;
+        _serverTiming = serverTiming;
+        
         DefaultTypeMap.MatchNamesWithUnderscores = true;
         SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
+        SqlMapper.AddTypeHandler(new DateOnlyHandler());
         SqlMapper.AddTypeHandler(new GuidHandler());
         SqlMapper.AddTypeHandler(new TimeSpanHandler());
         // SqlMapper.AddTypeHandler(new DecimalHandler());
-        // Reset();
     }
 
-    public SqliteConnection CreateConnection()
+    public IDbConnection CreateConnection()
     {
+        // var conn = new ServerTimingDbConnection(new SqliteConnection(_connectionString), _serverTiming);
         var conn = new SqliteConnection(_connectionString);
         conn.Open();
         
         // enable foreign keys as they are not on by default
+        // enable wal for MOAR performance
         conn.Execute("PRAGMA foreign_keys = ON; PRAGMA journal_mode = 'wal'");
-        // MOAR performance
-        conn.Execute("PRAGMA journal_mode = 'wal'");
-        
+
         return conn;
     }
     
@@ -74,11 +78,10 @@ CREATE TABLE IF NOT EXISTS categories (
     name TEXT NOT NULL
 ) STRICT;
 
-CREATE TABLE IF NOT EXISTS envelopes (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT ,
-    month TEXT NOT NULL,
-    amount TEXT NOT NULL
-) STRICT;
+CREATE TABLE IF NOT EXISTS cleared_statuses (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL
+    ) STRICT;
 
 CREATE TABLE IF NOT EXISTS financial_transactions (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -88,23 +91,11 @@ CREATE TABLE IF NOT EXISTS financial_transactions (
     direction TEXT NOT NULL,
     memo TEXT NOT NULL,
     account_id INTEGER NOT NULL,
-    cleared_status TEXT NOT NULL
-) STRICT;
-
-CREATE TABLE IF NOT EXISTS financial_transactions_envelopes (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    financial_transaction_id INTEGER NOT NULL,
-    envelope_id INTEGER NOT NULL,
-    FOREIGN KEY (financial_transaction_id) REFERENCES financial_transactions(id),
-    FOREIGN KEY (envelope_id) REFERENCES envelopes(id)
-) STRICT;
-
-CREATE TABLE IF NOT EXISTS categories_envelopes (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    cleared_status_id INTEGER NOT NULL,
     category_id INTEGER NOT NULL,
-    envelope_id INTEGER NOT NULL,
-    FOREIGN KEY (category_id) REFERENCES categories(id),
-    FOREIGN KEY (envelope_id) REFERENCES envelopes(id)
+    FOREIGN KEY (account_id) REFERENCES accounts(id),
+    FOREIGN KEY (cleared_status_id) REFERENCES cleared_statuses(id),
+    FOREIGN KEY (category_id) REFERENCES categories(id)
 ) STRICT;
 """;
         connection.Execute(sql);
@@ -132,6 +123,7 @@ DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS accounts;
 DROP TABLE IF EXISTS account_types;
 DROP TABLE IF EXISTS budget_types;
+DROP TABLE IF EXISTS cleared_statuses;
 """;
         connection.Execute(sql);
         connection.Close();
@@ -142,9 +134,10 @@ DROP TABLE IF EXISTS budget_types;
         using var connection = CreateBulkInsertConnection();
 
         ImportCsv(connection, "categories");
+        ImportCsv(connection, "account_types");
+        ImportCsv(connection, "budget_types");
+        ImportCsv(connection, "cleared_statuses");
         // ImportEnvelopes(connection);
-        // ImportCsv(connection, "account_types");
-        // ImportCsv(connection, "budget_types");
 
         connection.Close();
     }
@@ -191,30 +184,5 @@ DROP TABLE IF EXISTS budget_types;
         var keyNames = string.Join(',', headers);
         var keyParams = string.Join(',', headers.Select(x => '@' + x));
         command.CommandText = $"INSERT INTO {tableName} ({keyNames}) VALUES ({keyParams})";
-    }
-
-    private static void ImportEnvelopes(IDbConnection connection)
-    {
-        var lines = File.ReadLines("Import\\envelopes.csv");
-        foreach (var line in lines.Skip(1))
-        {
-            var parts = line.Split(',');
-            connection.Execute(
-                "INSERT INTO envelopes (id, month, amount) VALUES (@id, @month, @amount)",
-                new
-                {
-                    id = parts[0],
-                    month = parts[1],
-                    amount = parts[3]
-                });
-
-            connection.Execute(
-                "INSERT INTO categories_envelopes (category_id, envelope_id) VALUES (@categoryId, @envelopeId)",
-                new
-                {
-                    categoryId = parts[2],
-                    envelopeId = parts[0]
-                });
-        }
     }
 }

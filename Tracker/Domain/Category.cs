@@ -1,9 +1,12 @@
 ﻿namespace Tracker.Domain;
 
-public record Category(long Id, string Name)
+public class Category
 {
-    public static readonly Category Empty = new(0L, string.Empty);
+    public long Id { get; init; }
+    public string Name { get; init; } = string.Empty;
     
-    public static Category CreateNew(string name) => new(0L, name);
-    public static Category CreateExisting(long id, string name) => new(id, name);
+    public static readonly Category Empty = new();
+    
+    public static Category CreateNew(string name) => new() { Name = name };
+    public static Category CreateExisting(long id, string name) => new () { Id = id, Name = name };
 }

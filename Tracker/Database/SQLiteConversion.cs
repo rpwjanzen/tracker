@@ -23,6 +23,12 @@ internal class DateTimeOffsetHandler : SqliteTypeHandler<DateTimeOffset>
         => DateTimeOffset.Parse((string)value);
 }
 
+internal class DateOnlyHandler : SqliteTypeHandler<DateOnly>
+{
+    public override DateOnly Parse(object value)
+        => DateOnly.Parse((string)value);
+}
+
 internal class GuidHandler : SqliteTypeHandler<Guid>
 {
     public override Guid Parse(object value)

@@ -33,10 +33,11 @@ public sealed record Account(
 )
 {
     // for Dapper
-    public Account(long id, string name) : this(id, name, 0M, default, AccountType.Empty, BudgetType.Empty)
+    public Account() :
+        this(0L, string.Empty, 0M, DateOnly.FromDateTime(DateTime.Today), AccountType.Empty, BudgetType.Empty)
     {
     }
-
+    
     public static readonly Account Empty = new(0L, string.Empty, 0m, default, AccountType.Empty, BudgetType.Empty);
 
     public static Account CreateNew(

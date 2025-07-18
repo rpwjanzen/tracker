@@ -1,37 +1,195 @@
-﻿@model IEnumerable<FinancialTransactionView>
+﻿@using Tracker.Controllers
+@model Tracker.Controllers.FinancialTransactionsViewModel
 @{
     ViewData["Title"] = "Financial Transactions";
 }
-<a asp-controller="FinancialTransactions" asp-action="Add">Add</a>
-<a asp-controller="FinancialTransactions" asp-action="Import">Import</a>
-<table hx-target="closest tr">
-    <caption>Financial Transactions</caption>
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Description</th>
-            <th>Amount</th>
-            <th></th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var t in Model)
-        {
-            <tr>
-                <td>@t.FinancialTransactionType.PostedOn.ToString("yyyy-MM-dd")</td>
-                <td>@t.FinancialTransactionType.Payee</td>
-                <td>@t.FinancialTransactionType.Amount.ToString("C")</td>
-                <td><!-- Balance --></td>
-                <td>
-                    <a href="/financial-transaction/@t.FinancialTransactionType.Id/edit">Edit</a>
-                </td>
-                <td>
-                    <form action="/financial-transaction/@t.FinancialTransactionType.Id/remove" method="post">
-                        <button type="submit">Remove</button>
-                    </form>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+@{
+    switch (Model.Fragment)
+    {
+        case Fragment.List:
+            <a href="/financial-transactions/import">Import</a>
+            <hr/>
+            <a href="/financial-transactions/add">Add</a>
+            <table>
+                <caption>Financial Transactions</caption>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Posted On</th>
+                    <th>Payee</th>
+                    <th>Amount</th>
+                    <th>Direction</th>
+                    <th>Memo</th>
+                    <th>Cleared Status</th>
+                    <th>Account</th>
+                    <th>Category</th>
+                    <th></th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var t in Model.Transactions)
+                {
+                    <tr>
+                        <td>@t.Id</td>
+                        <td>@t.PostedOn</td>
+                        <td>@t.Payee</td>
+                        <td>@t.Amount.ToString("C")</td>
+                        <td>@t.Direction</td>
+                        <td>@t.Memo</td>
+                        <td>@t.ClearedStatus.Name</td>
+                        <td>@t.Account.Name</td>
+                        <td>@t.Category.Name</td>
+                        <td><a href="/financial-transactions/@t.Id/edit">Edit</a></td>
+                        <td><a href="/financial-transactions/@t.Id/delete">Delete</a></td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+            <a href="/financial-transactions/add">Add</a>
+            break;
+            
+        case Fragment.New:
+            <div class="box">
+                <strong class="block titlebar">Add Transaction</strong>
+                <form method="post" class="table rows">
+                    <div>
+                        <label for="postedOn">Posted On</label>
+                        <input type="date" required name="postedOn" id="postedOn" value="@Model.Transaction.PostedOn"/>
+                    </div>
+                    <div>
+                        <label for="payee">Payee</label>
+                        <input required name="payee" id="payee" value="@Model.Transaction.Payee"/>
+                    </div>
+                    <div>
+                        <label for="amount">Amount</label>
+                        <input type="text" inputmode="number" pattern="^(\d+)|(\d+\.)|(\d+\.\d\d)|(\.\d\d)$" required name="amount" id="amount" value="@Model.Transaction.Amount.ToString("F")"/>
+                    </div>
+                    <div>
+                        <label for="memo">Memo</label>
+                        <input name="memo" id="memo" value="@Model.Transaction.Memo"/>
+                    </div>
+                    <div>
+                        <label for="account">Account</label>
+                        <select required name="accountId" id="account" value="@Model.Transaction.Account">
+                            @foreach (var x in Model.Accounts)
+                            {
+                                <option value="@x.Id">@x.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label for="category">Category</label>
+                        <select required name="categoryId" id="category" value="@Model.Transaction.Category">
+                            @foreach (var c in Model.Categories)
+                            {
+                                <option value="@c.Id">@c.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label for="clearedStatus">Cleared</label>
+                        <select required name="clearedStatusId" id="clearedStatus" value="@Model.Transaction.ClearedStatus">
+                            @foreach (var c in Model.ClearedStatuses)
+                            {
+                                <option value="@c.Id">@c.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <button>Add Transaction</button>
+                        <a href="/financial-transactions">Cancel</a>
+                    </div>
+                </form>
+            </div>
+            break;
+            
+        case Fragment.Edit:
+            <div class="box">
+                <strong class="block titlebar">Add Transaction</strong>
+                <form method="post" class="table rows">
+                    <div>
+                        <label for="postedOn">Posted On</label>
+                        <input type="date" required name="postedOn" id="postedOn" value="@Model.Transaction.PostedOn"/>
+                    </div>
+                    <div>
+                        <label for="payee">Payee</label>
+                        <input required name="payee" id="payee" value="@Model.Transaction.Payee"/>
+                    </div>
+                    <div>
+                        <label for="amount">Amount</label>
+                        @* TODO: allow for $ in UI, strip at server *@
+                        <input type="text" inputmode="number" pattern="^(\d+)|(\d+\.)|(\d+\.\d\d)|(\.\d\d)$" required name="amount" id="amount" value="@Model.Transaction.Amount.ToString("F")"/>
+                    </div>
+                    <div>
+                        <label for="memo">Memo</label>
+                        <input name="memo" id="memo" value="@Model.Transaction.Memo"/>
+                    </div>
+                    <div>
+                        <label for="account">Account</label>
+                        <select required name="accountId" id="account" value="@Model.Transaction.Account">
+                            @foreach (var x in Model.Accounts)
+                            {
+                                if (x.Id == Model.Transaction.Account.Id)
+                                {
+                                    <option value="@x.Id" selected>@x.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@x.Id">@x.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label for="category">Category</label>
+                        <select required name="categoryId" id="category" value="@Model.Transaction.Category">
+                            @foreach (var c in Model.Categories)
+                            {
+                                if (Model.Transaction.Category.Id == c.Id)
+                                {
+                                    <option value="@c.Id" selected>@c.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label for="clearedStatus">Cleared</label>
+                        <select required name="clearedStatusId" id="clearedStatus" value="@Model.Transaction.ClearedStatus">
+                            @foreach (var c in Model.ClearedStatuses)
+                            {
+                                if (Model.Transaction.ClearedStatus.Id == c.Id)
+                                {
+                                    <option value="@c.Id" selected>@c.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@c.Id">@c.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <button>Update Transaction</button>
+                        <a href="/financial-transactions">Cancel</a>
+                    </div>
+                </form>
+            </div>
+            break;
+            
+        case Fragment.Details:
+            break;
+            
+        case Fragment.Delete:
+            <form method="post">
+                <p>Are you sure you want to delete the transaction of @Model.Transaction.Amount.ToString("C") at @Model.Transaction.Payee on @Model.Transaction.PostedOn?</p>
+                <button>Delete</button>
+                <a href="/financial-transactions">Cancel</a>
+            </form>
+            break;
+    }
+}

@@ -14,7 +14,8 @@ public sealed class CategoriesController(DapperContext db) : Controller
     {
         using var connection = db.CreateConnection();
         var categories = connection.Query<Category>("SELECT id, name FROM categories ORDER BY id");
-        return View("Index", CategoryViewModel.ForCategories(Fragment.List, categories));
+        var view = View("Index", CategoryViewModel.ForCategories(Fragment.List, categories));
+        return view;
     }
 
     [HttpGet("categories/{id:long}")]
@@ -71,6 +72,7 @@ public sealed class CategoriesController(DapperContext db) : Controller
     public IActionResult Delete(long id)
     {
         using var connection = db.CreateConnection();
+        connection.Execute("DELETE FROM financial_transactions WHERE category_id = @id", new { id = id });
         connection.Execute("DELETE FROM categories WHERE id = @id", new { id = id });
         return Redirect("/categories");
     }

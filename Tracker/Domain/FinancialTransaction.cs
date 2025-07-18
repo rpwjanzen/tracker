@@ -3,8 +3,18 @@ using System.Collections.Generic;
 
 namespace Tracker.Domain;
 
+public record ClearedStatus(long Id, string Name)
+{
+    public ClearedStatus() : this(0L, string.Empty)
+    {
+    }
+
+    public static readonly ClearedStatus Cleared = new (1, "Cleared");
+    public static readonly ClearedStatus Uncleared = new (2, "Uncleared");
+}
+
 // account, date, payee, alert, category, memo, outflow, inflow
-public record FinancialTransactionType(
+public record FinancialTransaction(
     long Id,
     long AccountId,
     DateOnly PostedOn,
@@ -14,13 +24,16 @@ public record FinancialTransactionType(
     decimal Amount,
     Direction Direction,
     ClearedStatus ClearedStatus
-);
-
-public static class FinancialTransaction
+)
 {
-    public static readonly FinancialTransactionType Empty = new(0L, 0L, default, string.Empty, null, string.Empty, 0m, default, default);
+    public FinancialTransaction() :
+        this(0L, 0L, default, string.Empty, null, string.Empty, 0m, default, default)
+    {
+    }
 
-    public static FinancialTransactionType CreateNew(
+    public static readonly FinancialTransaction Empty = new();
+
+    public static FinancialTransaction CreateNew(
         long accountId,
         DateOnly postedOn,
         string payee,
@@ -31,7 +44,7 @@ public static class FinancialTransaction
         ClearedStatus clearedStatus
     ) => new (0L, accountId, postedOn, payee, categoryId, memo, amount, direction, clearedStatus);
     
-    public static FinancialTransactionType CreateExisting(
+    public static FinancialTransaction CreateExisting(
         long id,
         long accountId,
         DateOnly postedOn,
@@ -45,15 +58,10 @@ public static class FinancialTransaction
         => new (id, accountId, postedOn, payee, categoryId, memo, amount, direction, clearedStatus);
 }
 
-public record FetchFinancialTransaction(long Id): IQuery<FinancialTransactionType?>;
-public record FetchFinancialTransactions(long? AccountId = null): IQuery<IEnumerable<FinancialTransactionType>>;
+public record FetchFinancialTransaction(long Id): IQuery<FinancialTransaction?>;
+public record FetchFinancialTransactions(long? AccountId = null): IQuery<IEnumerable<FinancialTransaction>>;
 
 public enum Direction { Inflow, Outflow }
-public enum ClearedStatus
-{
-    Uncleared,
-    Cleared
-}
 public record AddFinancialTransaction(
     long AccountId,
     DateOnly PostedOn,

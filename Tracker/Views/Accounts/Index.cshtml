@@ -1,113 +1,169 @@
 ﻿@using Tracker.Controllers
 @model Tracker.Controllers.AccountViewModel
-
 @{
     ViewData["Title"] = "Accounts";
 }
 
 @{
-    switch (Model.FragmentId) 
+    switch (Model.FragmentId)
     {
-        case Fragment.New:
-            <tr hx-swap="outerHTML" hx-target="this">
-                @* TODO: determine if we need this when we have the script *@
-                <td>@Html.AntiForgeryToken()</td>
-                <td><input value="@Model.Account.Name" required name="name" autofocus=""/></td>
-                <td><input value="@Model.Account.CurrentBalance" required type="number" step="0.01"  name="currentBalance"/></td>
-                <td><input value="@Model.Account.BalanceDate" required type="date"  name="balanceDate"/></td>
-                <td>
-                    <select name="accountType" required>
-                        @foreach (var accountType in Model.AccountTypes)
+        case Fragment.New: 
+            <form method="post">
+                <div>
+                    @Html.AntiForgeryToken()
+                </div>
+                <div>
+                    <label for="name">Name</label>
+                    <input
+                        id="name"
+                        name="name"
+                        value="@Model.Account.Name"
+                        required
+                        autofocus />
+                </div>
+                <div>
+                    <label for="accountType">Account Type</label>
+                    <select id="accountType" name="accountTypeId" required>
+                        @foreach (var x in Model.AccountTypes)
                         {
-                            <option value="@accountType.Id">@accountType.Name</option>
+                            <option value="@x.Id">@x.Name</option>
                         }
                     </select>
-                </td>
-                <td>
-                    <select name="budgetType" required>
-                        @foreach (var (name, value) in Model.BudgetTypes)
+                </div>
+                <div>
+                    <label for="budgetType">Budget Type</label>
+                    <select id="budgetType" name="budgetTypeId" required>
+                        @foreach (var x in Model.BudgetTypes)
                         {
-                            <option value="@value">@name</option>
+                            <option value="@x.Id">@x.Name</option>
                         }
                     </select>
-                </td>
-                <td>
-                    <button type="button" hx-get="accounts/cancel-add">Cancel</button>
-                </td>
-                <td>
-                    <button type="button" hx-post="accounts" hx-include="closest tr">Add</button>
-                </td>
-            </tr>
-            break;
-            
-        case Fragment.Details:
-            <partial name="Detail"/>
-            break;
+                </div>
+                <div>
+                    <button type="submit">Create</button>
+                </div>
+                <div>
+                    <a href="/accounts">Cancel</a>
+                </div>
+            </form>
+        break;
             
         case Fragment.Edit:
-            <tr hx-swap="outerHTML" hx-target="this">
-                <td>@Html.AntiForgeryToken()</td>
-                <td><input value="@Model.Account.Name" required name="name" autofocus/></td>
-                <td></td>
-                <td></td>
-                <td>
-                    <select name="accountType" required>
-                        @foreach (var accountType in Model.AccountTypes)
+            <form method="post">
+                <div>@Html.AntiForgeryToken()</div>
+                <div>
+                    <label for="name">Name</label>
+                    <input
+                        id="name"
+                        name="name"
+                        value="@Model.Account.Name"
+                        required
+                        autofocus />
+                </div>
+                <div>
+                    <label for="accountType">Account Type</label>
+                    <select id="accountType" name="accountTypeId" required>
+                        @foreach (var x in Model.AccountTypes)
                         {
-                            <option value="@accountType.Id">@accountType.Name</option>
+                            if (Model.Account.Type == x)
+                            {
+                                <option value="@x.Id" selected>@x.Name</option>
+                            }
+                            else
+                            {
+                                <option value="@x.Id">@x.Name</option>
+                            }
                         }
                     </select>
-                </td>
-                <td>
-                    <select name="budgetType" required>
-                        @foreach (var budgetType in Model.BudgetTypes)
+                </div>
+                <div>
+                    <label for="budgetType">Budget Type</label>
+                    <select id="budgetType" name="budgetTypeId" required>
+                        @foreach (var x in Model.BudgetTypes)
                         {
-                            <option value="@budgetType.Id">@budgetType.Name</option>
+                            if (Model.Account.BudgetType == x)
+                            {
+                                <option value="@x.Id" selected>@x.Name</option>
+                            }
+                            else
+                            {
+                                <option value="@x.Id">@x.Name</option>
+                            }
                         }
                     </select>
-                </td>
-                <td>
-                    <button type="button" hx-get="accounts/@Model.Account.Id/cancel-edit">Cancel</button>
-                </td>
-                <td>
-                    <button type="button" hx-post="accounts" hx-include="closest tr">Add</button>
-                </td>
-            </tr>
-            break;
+                </div>
+                <div>
+                    <button>Update</button>
+                </div>
+                <div>
+                    <a href="/accounts">Cancel</a>
+                </div>
+            </form>
+        break;
             
         case Fragment.List:
-            <button
-                hx-get="accounts/add"
-                hx-target="#accounts-table-body"
-                hx-swap="beforeend">
-                Add Account
-            </button>
+            <a href="/accounts/add">Add Account</a>
             <table>
+                <caption>Accounts</caption>
                 <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th>Current Balance</th>
-                    <th>Balance Date</th>
-                    <th>Type</th>
-                    <th>Budget Type</th>
-                    <th></th>
-                    <th></th>
-                </tr>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Balance</th>
+                        <th>Type</th>
+                        <th>Budget Type</th>
+                        <th></th>
+                        <th></th>
+                    </tr>
                 </thead>
-                <tbody id="accounts-table-body">
-                @foreach (var account in Model.Accounts)
+                <tbody>
+                @foreach (var category in Model.Accounts)
                 {
-                    <partial name="Detail" model="account"/>
+                    <tr>
+                        <td>@category.Id</td>
+                        <td>@category.Name</td>
+                        <td>@category.CurrentBalance</td>
+                        <td>@category.Type.Name</td>
+                        <td>@category.BudgetType.Name</td>
+                        <td>
+                            <a href="accounts/@category.Id/edit">Edit</a>
+                        </td>
+                        <td>
+                            <a href="/accounts/@category.Id/delete">Delete</a>
+                        </td>
+                    </tr>
                 }
                 </tbody>
             </table>
-            <button
-                hx-get="accounts/add"
-                hx-target="#accounts-table-body"
-                hx-swap="beforeend">
-                Add Account
-            </button>
+            <a href="/accounts/add">Add Account</a>
             break;
+            
+        case Fragment.Details: 
+            <div>@Model.Account.Id</div>
+            <div>@Model.Account.Name</div>
+            <div>@Model.Account.CurrentBalance</div>
+            <div>@Model.Account.Type</div>
+            <div>@Model.Account.BudgetType</div>
+            <div>
+                <a href="/accounts">Back to list</a>
+            </div>
+            <div>
+                <a href="/accounts/@Model.Account.Id/edit">Edit</a>
+            </div>
+            <div>
+                <a href="/accounts/@Model.Account.Id/delete">Delete</a>
+            </div>
+            break;
+            
+        case Fragment.Delete:
+            <form method="post">
+                <p>Are you sure you want to delete the account "@Model.Account.Name"?</p>
+                <button>Delete</button>
+                <a href="/accounts">Cancel</a>
+            </form>
+            break;
+    
+        default:
+            throw new ArgumentOutOfRangeException();
     }
 }
