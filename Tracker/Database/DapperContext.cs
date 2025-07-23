@@ -24,6 +24,7 @@ public class DapperContext
         SqlMapper.AddTypeHandler(new DateOnlyHandler());
         SqlMapper.AddTypeHandler(new GuidHandler());
         SqlMapper.AddTypeHandler(new TimeSpanHandler());
+        SqlMapper.AddTypeHandler(new YearMonthHandler());
         // SqlMapper.AddTypeHandler(new DecimalHandler());
     }
 
@@ -34,9 +35,10 @@ public class DapperContext
         conn.Open();
         
         // enable foreign keys as they are not on by default
-        // enable wal for MOAR performance
-        conn.Execute("PRAGMA foreign_keys = ON; PRAGMA journal_mode = 'wal'");
-
+        // enable wal  for more performance: PRAGMA journal_mode = 'wal';
+        // increase page size from defaults of 4096 for more performance
+        // sync=off for more (dev) performance: PRAGMA synchronous = OFF;
+        conn.Execute("PRAGMA foreign_keys = ON; PRAGMA page_size = 8192;");
         return conn;
     }
     
@@ -47,7 +49,7 @@ public class DapperContext
         return conn;
     }
 
-    public void Init()
+    public void CreateSchema()
     {
         using var connection = CreateBulkInsertConnection();
         // Data types used are based off of MS info at
@@ -67,9 +69,9 @@ CREATE TABLE IF NOT EXISTS budget_types (
 CREATE TABLE IF NOT EXISTS accounts (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    account_type_id TEXT NOT NULL,
-    budget_type_id TEXT NOT NULL,
-    FOREIGN KEY (account_type_id) REFERENCES account_types(id),
+    account_type_id INTEGER NOT NULL,
+    budget_type_id INTEGER NOT NULL,
+    FOREIGN KEY (account_type_id) REFERENCES  account_types(id),
     FOREIGN KEY (budget_type_id) REFERENCES budget_types(id)
 ) STRICT;
 
@@ -78,10 +80,19 @@ CREATE TABLE IF NOT EXISTS categories (
     name TEXT NOT NULL
 ) STRICT;
 
+CREATE TABLE IF NOT EXISTS envelopes (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    month TEXT NOT NULL,
+    budgeted TEXT NOT NULL,
+    category_id INTEGER NOT NULL,
+     FOREIGN KEY (category_id) REFERENCES categories(id),
+     UNIQUE (month, category_id)
+) STRICT;
+
 CREATE TABLE IF NOT EXISTS cleared_statuses (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL
-    ) STRICT;
+) STRICT;
 
 CREATE TABLE IF NOT EXISTS financial_transactions (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -104,26 +115,24 @@ CREATE TABLE IF NOT EXISTS financial_transactions (
 
     public void Reset()
     {
-        Clear();
-        Init();
+        ClearSchema();
+        CreateSchema();
         Import();
     }
 
-    public void Clear()
+    public void ClearSchema()
     {
         using var connection = CreateConnection();
         connection.Open();
         var sql =
 """
-DROP TABLE IF EXISTS categories_envelopes;
-DROP TABLE IF EXISTS financial_transactions_envelopes;
-DROP TABLE IF EXISTS financial_transactions;
+--DROP TABLE IF EXISTS financial_transactions;
 DROP TABLE IF EXISTS envelopes;
-DROP TABLE IF EXISTS categories;
-DROP TABLE IF EXISTS accounts;
-DROP TABLE IF EXISTS account_types;
-DROP TABLE IF EXISTS budget_types;
-DROP TABLE IF EXISTS cleared_statuses;
+--DROP TABLE IF EXISTS categories;
+--DROP TABLE IF EXISTS accounts;
+--DROP TABLE IF EXISTS account_types;
+--DROP TABLE IF EXISTS budget_types;
+--DROP TABLE IF EXISTS cleared_statuses;
 """;
         connection.Execute(sql);
         connection.Close();
@@ -133,12 +142,12 @@ DROP TABLE IF EXISTS cleared_statuses;
     {
         using var connection = CreateBulkInsertConnection();
 
-        ImportCsv(connection, "categories");
-        ImportCsv(connection, "account_types");
-        ImportCsv(connection, "budget_types");
-        ImportCsv(connection, "cleared_statuses");
-        // ImportEnvelopes(connection);
-        ImportCsv(connection, "accounts");
+        // ImportCsv(connection, "categories");
+        // ImportCsv(connection, "account_types");
+        // ImportCsv(connection, "budget_types");
+        // ImportCsv(connection, "cleared_statuses");
+        // ImportCsv(connection, "accounts");
+        ImportCsv(connection, "envelopes");
 
         connection.Close();
     }

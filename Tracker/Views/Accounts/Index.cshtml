@@ -107,7 +107,6 @@
                 <caption>Accounts</caption>
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Name</th>
                         <th>Balance</th>
                         <th>Type</th>
@@ -117,19 +116,18 @@
                     </tr>
                 </thead>
                 <tbody>
-                @foreach (var category in Model.Accounts)
+                @foreach (var account in Model.Accounts)
                 {
                     <tr>
-                        <td>@category.Id</td>
-                        <td>@category.Name</td>
-                        <td>@category.CurrentBalance</td>
-                        <td>@category.Type.Name</td>
-                        <td>@category.BudgetType.Name</td>
+                        <td>@account.Name</td>
+                        <td>@account.CurrentBalance</td>
+                        <td>@account.Type.Name</td>
+                        <td>@account.BudgetType.Name</td>
                         <td>
-                            <a href="accounts/@category.Id/edit">Edit</a>
+                            <a href="accounts/@account.Id/edit">Edit</a>
                         </td>
                         <td>
-                            <a href="/accounts/@category.Id/delete">Delete</a>
+                            <a href="/accounts/@account.Id/delete">Delete</a>
                         </td>
                     </tr>
                 }

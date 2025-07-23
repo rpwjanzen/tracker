@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using Dapper;
+using Tracker.Domain;
 
 namespace Tracker.Database;
 
@@ -16,6 +17,8 @@ internal abstract class SqliteTypeHandler<T> : SqlMapper.TypeHandler<T>
     public override void SetValue(IDbDataParameter parameter, T? value)
         => parameter.Value = value;
 }
+
+// TODO: create and use Span<char> parsing methods to avoid creating extra garbage
 
 internal class DateTimeOffsetHandler : SqliteTypeHandler<DateTimeOffset>
 {
@@ -40,6 +43,19 @@ internal class TimeSpanHandler : SqliteTypeHandler<TimeSpan>
     public override TimeSpan Parse(object value)
         => TimeSpan.Parse((string)value);
 }
+
+internal class YearMonthHandler : SqliteTypeHandler<YearMonth>
+{
+    public override YearMonth Parse(object value)
+        => YearMonth.Parse((string)value);
+
+    public override void SetValue(IDbDataParameter parameter, YearMonth value)
+    {
+        parameter.DbType = DbType.String;
+        parameter.Value = value.ToString();
+    }
+}
+
 
 // internal class DecimalHandler : SqliteTypeHandler<decimal>
 // {

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Dapper;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Tracker.Database;
 using Tracker.Domain;

@@ -1,0 +1,28 @@
+﻿@model Tracker.Controllers.ReportsController.AnnualSpendingByCategoryViewModel
+
+@{
+    ViewData["Title"] = "Monthly Spending by Category";
+}
+
+<table class="striped">
+                <caption>Financial Transactions</caption>
+                <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Category</th>
+                    <th>Amount</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var s in Model.MonthlySummaries)
+                {
+                    <tr>
+                        <td>@s.Month</td>
+                        <td>@s.Category.Name</td>
+                        <td>@s.Amount.ToString("C")</td>
+                        <td><a href="/financial-transactions?date=@s.Month&payee=&accountId=&categoryId=@s.Category.Id">Details</a></td>
+                    </tr>
+                }
+                </tbody>
+            </table>

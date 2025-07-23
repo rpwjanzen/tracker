@@ -52,11 +52,10 @@
             
         case Fragment.List:
             <a href="/categories/add">Add Category</a>
-            <table>
+            <table class="striped">
                 <caption>Categories</caption>
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Name</th>
                         <th></th>
                         <th></th>
@@ -66,7 +65,6 @@
                 @foreach (var category in Model.Categories)
                 {
                     <tr>
-                        <td>@category.Id</td>
                         <td>@category.Name</td>
                         <td>
                             <a href="categories/@category.Id/edit">Edit</a>

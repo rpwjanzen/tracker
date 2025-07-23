@@ -8,13 +8,15 @@
     {
         case Fragment.List:
             <a href="/financial-transactions/import">Import</a>
+            <form method="post" action="/financial-transactions/auto-categorize">
+                <button>Autocategorize</button>
+            </form>
             <hr/>
             <a href="/financial-transactions/add">Add</a>
-            <table>
+            <table class="striped">
                 <caption>Financial Transactions</caption>
                 <thead>
                 <tr>
-                    <th>ID</th>
                     <th>Posted On</th>
                     <th>Payee</th>
                     <th>Amount</th>
@@ -26,12 +28,53 @@
                     <th></th>
                     <th></th>
                 </tr>
+                <tr>
+                    <th><input type="date" name="date" aria-label="Filtered Date" form="filterForm" value="@Model.Filter.Date"/></th>
+                    <th><input name="payee" aria-label="Filtered Payee" form="filterForm" value="@Model.Filter.Payee"/></th>
+                    <th>Amount</th>
+                    <th>Direction</th>
+                    <th>Memo</th>
+                    <th>Cleared Status</th>
+                    <th>
+                        <select name="accountId" aria-label="Filtered Account" form="filterForm">
+                            <option value="">Any</option>
+                            @foreach (var account in Model.Accounts)
+                            {
+                                if (Model.Filter.AccountId == account.Id)
+                                {
+                                    <option selected value="@account.Id">@account.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@account.Id">@account.Name</option>
+                                }
+                            }
+                        </select>
+                    </th>
+                    <th>
+                        <select name="categoryId" aria-label="Filtered Category" form="filterForm">
+                            <option value="">Any</option>
+                            @foreach (var category in Model.Categories)
+                            {
+                                if (@Model.Filter.CategoryId == category.Id)
+                                {
+                                    <option selected value="@category.Id">@category.Name</option>
+                                }
+                                else
+                                {
+                                    <option value="@category.Id">@category.Name</option>
+                                }
+                            }
+                        </select>
+                    </th>
+                    <th></th>
+                    <th><form id="filterForm"><button>Apply</button></form></th>
+                </tr>
                 </thead>
                 <tbody>
                 @foreach (var t in Model.Transactions)
                 {
                     <tr>
-                        <td>@t.Id</td>
                         <td>@t.PostedOn</td>
                         <td>@t.Payee</td>
                         <td>@t.Amount.ToString("C")</td>
@@ -46,6 +89,7 @@
                 }
                 </tbody>
             </table>
+            <div>Transactions Count: @Model.TransactionsCount</div>
             <a href="/financial-transactions/add">Add</a>
             break;
             

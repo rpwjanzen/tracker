@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Tracker;
 using Tracker.Database;
 using SimpleInjector;
+using Tracker.Domain;
 
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
@@ -18,6 +19,10 @@ services.AddRouting(option =>
 // TODO: figure out where this belongs
 services.AddMvcCore();
 services.AddControllersWithViews();
+// .AddJsonOptions(options =>
+// {
+//     options.JsonSerializerOptions.Converters.Add(new YearMonthConverter());
+// });
 
 // Sets up the basic configuration that for integrating Simple Injector with
 // ASP.NET Core by setting the DefaultScopedLifestyle, and setting up auto
@@ -88,5 +93,6 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 container.Verify();
+
 
 app.Run();

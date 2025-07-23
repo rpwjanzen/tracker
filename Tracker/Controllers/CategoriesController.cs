@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using Dapper;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +14,7 @@ public sealed class CategoriesController(DapperContext db) : Controller
     public IActionResult Index()
     {
         using var connection = db.CreateConnection();
-        var categories = connection.Query<Category>("SELECT id, name FROM categories ORDER BY id");
+        var categories = FetchCategories(connection);
         var view = View("Index", CategoryViewModel.ForCategories(Fragment.List, categories));
         return view;
     }
@@ -21,7 +22,8 @@ public sealed class CategoriesController(DapperContext db) : Controller
     [HttpGet("categories/{id:long}")]
     public IActionResult Index(long id)
     {
-        var category = FetchCategory(id);
+        using var connection = db.CreateConnection();
+        var category = FetchCategory(id, connection);
         return View("Index", CategoryViewModel.ForCategory(Fragment.Details, category));
     }
 
@@ -46,7 +48,8 @@ public sealed class CategoriesController(DapperContext db) : Controller
     [HttpGet("categories/{id:long}/edit")]
     public IActionResult EditForm(long id)
     {
-        var category = FetchCategory(id);
+        using var connection = db.CreateConnection();
+        var category = FetchCategory(id, connection);
         return View("Index", CategoryViewModel.ForCategory(Fragment.Edit, category));
     }
 
@@ -65,8 +68,11 @@ public sealed class CategoriesController(DapperContext db) : Controller
 
     [HttpGet("categories/{id:long}/delete")]
     public IActionResult DeleteForm(long id)
-        => View("Index", CategoryViewModel.ForCategory(Fragment.Delete, FetchCategory(id)));
-    
+    {
+        using var connection = db.CreateConnection();
+        return View("Index", CategoryViewModel.ForCategory(Fragment.Delete, FetchCategory(id, connection)));
+    }
+
     [HttpPost("categories/{id:long}/delete")]
     [ValidateAntiForgeryToken]
     public IActionResult Delete(long id)
@@ -77,13 +83,17 @@ public sealed class CategoriesController(DapperContext db) : Controller
         return Redirect("/categories");
     }
 
-    private Category FetchCategory(long id)
+    public static Category FetchCategory(long id, IDbConnection connection)
     {
-        using var connection = db.CreateConnection();
         return connection.QueryFirst<Category>(
             "SELECT id, name FROM categories WHERE id = @id",
             new { id = id }
         );
+    }
+    
+    public static IEnumerable<Category> FetchCategories(IDbConnection connection)
+    {
+        return connection.Query<Category>("SELECT id, name FROM categories ORDER BY name, id");
     }
 }
 
