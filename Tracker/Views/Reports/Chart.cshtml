@@ -1,0 +1,27 @@
+﻿@model Tracker.Controllers.ReportsController.ChartViewModel
+@if (Model.Entries.Count == 0)
+{
+    <p>No entries to display.</p>
+} else if (Model.Entries.Count == 1)
+{
+    <p>Only @Model.Entries[0].Description.</p>
+}
+else
+{
+    <figure class="chart" style="max-width: 50vh">
+        <svg viewBox="0 0 100 100" class="chart-pie">
+            @foreach (var entry in Model.Entries)
+            {
+                <circle r="25" cx="50" cy="50" class="pie" style="stroke: @entry.Colour; stroke-dasharray: @entry.CircleValue 158; transform: rotate(@entry.CircleOffset);"/>
+            }
+        </svg>
+        <figcaption style="flex-shrink: 0">
+            <ul class="chart-legend-list" style="display: flex; flex-direction: column; gap: 1rem;">
+                @foreach (var entry in Model.Entries)
+                {
+                    <li class="chart-legend-item" style="background-color: @entry.Colour">@entry.Description: @entry.Percent.ToString("N0")%</li>
+                }
+            </ul>
+        </figcaption>
+    </figure>
+}

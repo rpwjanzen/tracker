@@ -1,4 +1,4 @@
-﻿@model Tracker.Controllers.ReportsController.AnnualSpendingByCategoryViewModel
+﻿@model Tracker.Controllers.ReportsController.AnnualSpendingByCategoryViewModel;
 
 @{
     ViewData["Title"] = "Monthly Spending by Category";
@@ -12,6 +12,14 @@
         <th>Category</th>
         <th>Amount</th>
         <th></th>
+        <th></th>
+    </tr>
+    <tr>
+        <th><input type="month" name="month" form="filterForm" value="@Model.YearMonth"/></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th><form id="filterForm"><button>Apply</button></form></th>
     </tr>
     </thead>
     <tbody>
@@ -22,6 +30,7 @@
             <td>@s.Category.Name</td>
             <td>@s.Amount.ToString("C")</td>
             <td><a href="/financial-transactions?date=@s.Month&payee=&accountId=&categoryId=@s.Category.Id">Details</a></td>
+            <td><a href="/reports/chart?date=@s.Month">Chart</a></td>
         </tr>
     }
     </tbody>

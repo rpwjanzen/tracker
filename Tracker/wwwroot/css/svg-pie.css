@@ -1,0 +1,50 @@
+﻿.chart {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    /*gap: var(--gap);*/
+    margin: 0;
+}
+
+.chart-pie {
+    margin: 0;
+    transform: rotate(-90deg);
+    display: block;
+    flex-shrink: 0;
+    /*width: var(--chart-width);*/
+    height: auto;
+}
+
+.chart-legend {
+    flex-shrink: 0;
+    /*width: calc(var(--section-width) - var(--chart-width) - var(--gap));*/
+}
+
+.chart-legend-list {
+    padding-left: 0;
+    margin-top: 0;
+}
+
+.chart-legend-item {
+    list-style-type: none;
+    display: flex;
+    align-items: center;
+}
+
+.chart-legend-item::before {
+    content: '';
+    display: block;
+    width: 1.25rem;
+    height: 1.25rem;
+    background-color: gray;
+    border-radius: .3rem;
+    margin-bottom: .1rem;
+    margin-right: .5rem;
+}
+
+.pie {
+    fill: transparent;
+    stroke-width: 50;
+    stroke-dasharray: 0 158;
+    transform-origin: center center;
+}

@@ -1,0 +1,154 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <style>
+        .pie {
+            /* 
+              Total sum should be 158 for complete circle 
+              (=full stroke-dasharray) 
+            */
+            --value-one: 36.34; /* Value 23% (20/100*158) */
+            --value-two: 58.46; /* Value 37% (30/100*158) */
+            --value-three: 63.2; /* Value 40% (50/100*158) */
+        }
+    </style>
+    
+    <style>
+        /* Variables */
+        :root {
+            --section-width: 700px;
+            --chart-width: 400px;
+            --gap: 2rem;
+            --value-one-color: green;
+            --value-two-color: orange;
+            --value-three-color: indigo;
+        }
+
+        /* Container */
+        .section {
+            padding: var(--gap);
+            max-width: var(--section-width);
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .flow > * + * {
+            margin-top: var(--gap);
+        }
+
+        /* Chart */
+        .chart {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: var(--gap);
+            margin: 0;
+        }
+
+        .chart__pie {
+            margin: 0;
+            transform: rotate(-90deg);
+            display: block;
+            flex-shrink: 0;
+            width: var(--chart-width);
+            height: auto;
+        }
+
+        .chart__legend {
+            flex-shrink: 0;
+            width: calc(var(--section-width) - var(--chart-width) - var(--gap));
+        }
+
+        .chart__legend-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding-left: 0;
+            margin-top: 0;
+        }
+
+        .chart__legend-item {
+            list-style-type: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .chart__legend-item::before {
+            content: '';
+            display: block;
+            width: 1.25rem;
+            height: 1.25rem;
+            background-color: gray;
+            border-radius: .3rem;
+            margin-bottom: .1rem;
+            margin-right: .5rem;
+        }
+
+        .chart__legend-item--value-one::before {
+            background-color: var(--value-one-color);
+        }
+
+        .chart__legend-item--value-two::before {
+            background-color: var(--value-two-color);
+        }
+
+        .chart__legend-item--value-three::before {
+            background-color: var(--value-three-color);
+        }
+
+        /* Pie */
+        .pie {
+            --circle-array: 158;
+            /*--total: calc(var(--value-one) + var(--value-two) + var(--value-three));*/
+
+            fill: transparent;
+            stroke-width: 50;
+            stroke-dasharray: 0 158;
+            transform: rotate(var(--offset));
+            transform-origin: center center;
+        }
+
+        .pie--value-one {
+            stroke: var(--value-one-color);
+            stroke-dasharray: var(--value-one) var(--circle-array);
+        }
+
+        .pie--value-two {
+            --offset: calc(((var(--value-one) / var(--circle-array)) * 360) * 1deg);
+
+            stroke: var(--value-two-color);
+            stroke-dasharray: var(--value-two) var(--circle-array);
+        }
+
+        .pie--value-three {
+            --offset: calc((((var(--value-one) + var(--value-two)) / var(--circle-array)) * 360) * 1deg);
+
+            stroke: var(--value-three-color);
+            stroke-dasharray: var(--value-three) var(--circle-array);
+        }
+    </style>
+</head>
+<body>
+
+<section class="section flow">
+    <h1>SVG pie chart</h1>
+    <figure class="chart">
+        <svg viewBox="0 0 100 100" class="chart__pie" aria-hidden="true" focusable="false">
+            <circle r="25" cx="50" cy="50" class="pie pie--value-one"/>
+            <circle r="25" cx="50" cy="50" class="pie pie--value-two"/>
+            <circle r="25" cx="50" cy="50" class="pie pie--value-three"/>
+        </svg>
+        <figcaption class="chart__legend">
+            <ul class="chart__legend-list">
+                <li class="chart__legend-item chart__legend-item--value-one">Value one: 23%</li>
+                <li class="chart__legend-item chart__legend-item--value-two">Value two: 37%</li>
+                <li class="chart__legend-item chart__legend-item--value-three">Value three: 40%</li>
+            </ul>
+        </figcaption>
+    </figure>
+</section>
+</body>
+</html>

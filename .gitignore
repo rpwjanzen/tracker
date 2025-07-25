@@ -63,6 +63,8 @@ riderModule.iml
 
 #Misc project files
 Tracker.db
+Tracker.db-shm
+Tracker.db-wal
 Tracker.sln.DotSettings.user
 Tracker/wwwroot/uploads
 
