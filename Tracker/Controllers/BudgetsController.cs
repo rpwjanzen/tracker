@@ -1,21 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.AspNetCore.Mvc;
+using Tracker.Database;
 using Tracker.Domain;
-using Tracker.Views.Budget;
 
 namespace Tracker.Controllers;
 
-public class BudgetsController(
-    IQueryHandler<FetchBudgetRowsQuery, IEnumerable<BudgetRowReadModel>> fetchBudgetRows
-    ) : Controller
+public class BudgetsController(DapperContext db) : Controller
 {
     [HttpGet]
-    public IActionResult Index()
+    public IActionResult Index(string yearMonth)
     {
-        var month = new DateOnly(2025, 5, 1);
-        var budgetRows = fetchBudgetRows.Handle(new FetchBudgetRowsQuery(month));
-        var budget = new BudgetSummary(budgetRows, new MonthSummary(month, 0, 0, 0, 0, 0, 0, 0));
+        using var connetion = db.CreateConnection();
+        var envelopes = EnvelopesController.FetchEnvelopes(connetion).GroupBy(x => x.Month);
+        var budget = envelopes.ToDictionary(x => x.Key, x => x.AsEnumerable());
+            
+        // var budget = new Dictionary<YearMonth, IEnumerable<Envelope>>();
 
         return View("Index", budget);
     }

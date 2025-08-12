@@ -121,6 +121,11 @@ WHERE id = @id
     [ValidateAntiForgeryToken]
     public IActionResult Delete(long id)
     {
+        if (id == 0)
+        {
+            return BadRequest("This account cannot be deleted.");
+        }
+        
         using var connection = db.CreateConnection();
         connection.Execute("DELETE FROM financial_transactions WHERE account_id = @id", new { id = id });
         connection.Execute("DELETE FROM accounts WHERE id = @id", new { id = id });

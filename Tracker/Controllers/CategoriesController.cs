@@ -77,6 +77,11 @@ public sealed class CategoriesController(DapperContext db) : Controller
     [ValidateAntiForgeryToken]
     public IActionResult Delete(long id)
     {
+        if (id == 0)
+        {
+            return BadRequest("This category cannot be deleted.");
+        }
+        
         using var connection = db.CreateConnection();
         connection.Execute("DELETE FROM financial_transactions WHERE category_id = @id", new { id = id });
         connection.Execute("DELETE FROM categories WHERE id = @id", new { id = id });

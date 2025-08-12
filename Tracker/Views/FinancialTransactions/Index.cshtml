@@ -31,10 +31,10 @@
                 <tr>
                     <th><input type="date" name="date" aria-label="Filtered Date" form="filterForm" value="@Model.Filter.Date"/></th>
                     <th><input name="payee" aria-label="Filtered Payee" form="filterForm" value="@Model.Filter.Payee"/></th>
-                    <th>Amount</th>
-                    <th>Direction</th>
-                    <th>Memo</th>
-                    <th>Cleared Status</th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
+                    <th></th>
                     <th>
                         <select name="accountId" aria-label="Filtered Account" form="filterForm">
                             <option value="">Any</option>
@@ -139,6 +139,15 @@
                         </select>
                     </div>
                     <div>
+                        <label for="direction">Direction</label>
+                        <select required name="direction" id="direction" value="@Model.Transaction.Direction">
+                            @foreach (var c in Model.Directions)
+                            {
+                                <option value="@c.Id">@c.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div>
                         <button>Add Transaction</button>
                         <a href="/financial-transactions">Cancel</a>
                     </div>
@@ -209,6 +218,15 @@
                                 {
                                     <option value="@c.Id">@c.Name</option>
                                 }
+                            }
+                        </select>
+                    </div>
+                    <div>
+                        <label for="direction">Direction</label>
+                        <select required name="direction" id="direction" value="@Model.Transaction.Direction">
+                            @foreach (var c in Model.Directions)
+                            {
+                                <option value="@c.Id">@c.Name</option>
                             }
                         </select>
                     </div>

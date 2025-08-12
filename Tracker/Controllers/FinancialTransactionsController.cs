@@ -162,7 +162,7 @@ public class FinancialTransactionsController(DapperContext db) : Controller
                 postedOn = dto.PostedOn,
                 payee = dto.Payee ?? string.Empty,
                 amount = dto.Amount,
-                direction= Direction.Inflow,
+                direction= dto.Direction,
                 memo = dto.Memo ?? string.Empty,
                 accountId = dto.AccountId,
                 clearedStatusId = dto.ClearedStatusId,
@@ -515,7 +515,15 @@ public record FinancialTransactionsViewModel(
 )
 {
     public int TransactionsCount = Transactions.Count;
+
+    public IEnumerable<DirectionViewModel> Directions = new[]
+    {
+        new DirectionViewModel((long)Direction.Inflow, "Inflow"),
+        new DirectionViewModel((long)Direction.Outflow, "Outflow"),
+    };
 }
+
+public record DirectionViewModel(long Id, string Name);
 
 public record FinancialTransactionsFilter(DateOnly? Date, string? Payee, long? AccountId, long? CategoryId)
 {

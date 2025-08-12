@@ -15,6 +15,13 @@ public class EnvelopesController(DapperContext db) : Controller
     public IActionResult Index()
     {
         using var connection = db.CreateConnection();
+        var envelopes = FetchEnvelopes(connection);
+        
+        return View("Index", ForEnvelopes(Fragment.List, envelopes, connection));
+    }
+
+    public static IEnumerable<Envelope> FetchEnvelopes(IDbConnection connection)
+    {
         var envelopes = connection.Query<Envelope, Category, Envelope>(
             """
             SELECT e.id as Id,
@@ -32,9 +39,33 @@ public class EnvelopesController(DapperContext db) : Controller
             (envelope, category) => envelope with { Category = category }
         );
         
-        return View("Index", ForEnvelopes(Fragment.List, envelopes, connection));
+        return envelopes;
     }
+    
+    public static IEnumerable<Envelope> FetchEnvelopes(IDbConnection connection, YearMonth yearMonth)
+    {
+        var envelopes = connection.Query<Envelope, Category, Envelope>(
+            """
+            SELECT coalesce(e.id, 0) as Id,
+                   @yearMonth,
+                   coalesce(e.budgeted, 0.00) as budgeted,
+                   COALESCE(SUM(ft.Amount), 0.00) + 0.00 AS allocated,
+                   c.id as Id,
+                   c.name as Name
+            FROM categories c
+            LEFT JOIN financial_transactions ft ON ft.category_id = c.id AND substr(ft.posted_on, 1, 7) = @yearMonth
+            LEFT JOIN envelopes e ON e.category_id = c.id
+            WHERE e.month = @yearMonth
+            GROUP BY coalesce(e.id, 0), @yearMonth, coalesce(e.budgeted, 0.00), c.id, c.name
+            ORDER BY c.name
+            """,
+            (envelope, category) => envelope with { Category = category },
+            new { yearMonth = yearMonth }
+        );
 
+        return envelopes;
+    }
+    
     [HttpGet("envelopes/{id:long}")]
     public IActionResult Index(long id)
     {
@@ -135,7 +166,30 @@ WHERE id = @id
         return Redirect("/envelopes");
     }
 
-    private Envelope FetchEnvelope(long id, IDbConnection connection)
+    public Envelope FetchEnvelope(YearMonth yearMonth, long categoryId,  IDbConnection connection)
+    {
+        return connection.Query<Envelope, Category, Envelope>(
+            """
+            SELECT coalesce(e.id, 0) as Id,
+                   @yearMonth,
+                   coalesce(e.budgeted, 0.00) as budgeted,
+                   coalesce(SUM(ft.amount), 0.00) AS allocated,
+                   @categoryId as Id,
+                   c.name as Name
+            FROM categories c
+                LEFT JOIN envelopes e ON e.category_id = c.id
+                LEFT JOIN financial_transactions ft ON ft.category_id = c.id
+            WHERE c.id = @categoryId AND (e.month IS NULL OR e.month = @yearMonth)
+            GROUP BY coalesce(e.id, 0), @yearMonth, coalesce(e.budgeted, 0.00), @categoryId, c.name
+            ORDER BY coalesce(e.id, 0)
+            LIMIT 1
+            """,
+            (envelope, category) => envelope with { Category = category },
+            new { yearMonth = yearMonth, categoryId = categoryId }
+        ).First();
+    }
+    
+    public Envelope FetchEnvelope(long id, IDbConnection connection)
     {
         return connection.Query<Envelope, Category, Envelope>(
             """
@@ -178,6 +232,8 @@ public record EnvelopeView(Envelope Envelope)
 
 public record Envelope(long Id, YearMonth Month, decimal Budgeted, decimal Allocated, Category Category)
 {
+    public decimal Balance => Budgeted - Allocated;
+
     public Envelope() : this(0L, YearMonth.MinValue, 0M, 0M, Category.Empty)
     {
     }

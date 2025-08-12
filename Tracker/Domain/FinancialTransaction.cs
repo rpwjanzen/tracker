@@ -54,8 +54,7 @@ public record FinancialTransaction(
         decimal amount,
         Direction direction,
         ClearedStatus clearedStatus
-        )
-        => new (id, accountId, postedOn, payee, categoryId, memo, amount, direction, clearedStatus);
+    ) => new (id, accountId, postedOn, payee, categoryId, memo, amount, direction, clearedStatus);
 }
 
 public record FetchFinancialTransaction(long Id): IQuery<FinancialTransaction?>;
