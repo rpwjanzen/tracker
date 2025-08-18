@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Tracker.Database;
 using Tracker.Domain;
@@ -11,12 +10,11 @@ public class BudgetsController(DapperContext db) : Controller
     [HttpGet]
     public IActionResult Index(string yearMonth)
     {
-        using var connetion = db.CreateConnection();
-        var envelopes = EnvelopesController.FetchEnvelopes(connetion).GroupBy(x => x.Month);
+        using var connection = db.CreateConnection();
+        var envelopes = EnvelopesController.FetchEnvelopes(connection, new YearMonth(2024, 1))
+            .GroupBy(x => x.Month);
         var budget = envelopes.ToDictionary(x => x.Key, x => x.AsEnumerable());
             
-        // var budget = new Dictionary<YearMonth, IEnumerable<Envelope>>();
-
         return View("Index", budget);
     }
 }

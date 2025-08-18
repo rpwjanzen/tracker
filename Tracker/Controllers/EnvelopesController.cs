@@ -15,57 +15,66 @@ public class EnvelopesController(DapperContext db) : Controller
     public IActionResult Index()
     {
         using var connection = db.CreateConnection();
-        var envelopes = FetchEnvelopes(connection);
-        
-        return View("Index", ForEnvelopes(Fragment.List, envelopes, connection));
+        var data = new Dictionary<YearMonth, IEnumerable<Envelope>>();
+        var year = YearMonth.Now.Year;
+        for (var i = 1; i < 13; i++)
+        {
+            var yearMonth = new YearMonth(year, i);
+            var envelopes = FetchEnvelopes(connection, yearMonth);
+            data[yearMonth] = envelopes;
+        }
+
+        return View("Index", ForEnvelopes(Fragment.List, data[new YearMonth(year, 1)], connection));
     }
 
     public static IEnumerable<Envelope> FetchEnvelopes(IDbConnection connection)
     {
-        var envelopes = connection.Query<Envelope, Category, Envelope>(
-            """
-            SELECT e.id as Id,
-                   e.month,
-                   e.budgeted,
-                   COALESCE(SUM(ft.Amount), 0.00) + 0.00 AS allocated,
-                   e.category_id as Id,
-                   c.name as Name
-            FROM envelopes e
-                JOIN categories c ON c.id = e.category_id
-            LEFT JOIN financial_transactions ft ON ft.category_id = e.category_id AND substr(ft.posted_on, 1, 7) = e.month
-            GROUP BY e.id,e.month, e.budgeted, e.category_id, c.name
-            ORDER BY e.month, c.name
-            """,
-            (envelope, category) => envelope with { Category = category }
-        );
-        
-        return envelopes;
+        var yearMonths =
+        return envelopes.AsList();
     }
-    
+
     public static IEnumerable<Envelope> FetchEnvelopes(IDbConnection connection, YearMonth yearMonth)
     {
-        var envelopes = connection.Query<Envelope, Category, Envelope>(
-            """
-            SELECT coalesce(e.id, 0) as Id,
-                   @yearMonth,
-                   coalesce(e.budgeted, 0.00) as budgeted,
-                   COALESCE(SUM(ft.Amount), 0.00) + 0.00 AS allocated,
-                   c.id as Id,
-                   c.name as Name
-            FROM categories c
+        var allEnvelopes = new List<Envelope>();
+
+        var categories = CategoriesController.FetchCategories(connection);
+        foreach (var category in categories)
+        {
+            var envelope = FetchEnvelope(category, yearMonth, connection);
+            allEnvelopes.Add(envelope);
+        }
+
+        return allEnvelopes;
+    }
+
+    private static Envelope FetchEnvelope(Category category, YearMonth yearMonth, IDbConnection connection)
+    {
+        var sql =
+        """
+        SELECT e.id as Id,
+            @yearMonth as yearMonth,
+            e.budgeted,
+            COALESCE(SUM(ft.Amount), 0.00) + 0.00 AS allocated,
+            c.id as Id,
+            c.name as Name
+        FROM categories c
             LEFT JOIN financial_transactions ft ON ft.category_id = c.id AND substr(ft.posted_on, 1, 7) = @yearMonth
             LEFT JOIN envelopes e ON e.category_id = c.id
-            WHERE e.month = @yearMonth
-            GROUP BY coalesce(e.id, 0), @yearMonth, coalesce(e.budgeted, 0.00), c.id, c.name
-            ORDER BY c.name
-            """,
+        WHERE e.month = @yearMonth
+        GROUP BY coalesce(e.id, 0), @yearMonth, coalesce(e.budgeted, 0.00), c.id, c.name
+        """;
+        var envelopes = connection.Query<Envelope, Category, Envelope>(
+            sql,
             (envelope, category) => envelope with { Category = category },
             new { yearMonth = yearMonth }
-        );
-
-        return envelopes;
+        ).AsList();
+        if (envelopes.Count == 0)
+        {
+            return new Envelope(0L, yearMonth, 0M, 0M, category);
+        }
+        return envelopes.First();
     }
-    
+
     [HttpGet("envelopes/{id:long}")]
     public IActionResult Index(long id)
     {
@@ -124,7 +133,7 @@ public class EnvelopesController(DapperContext db) : Controller
         decimal Budgeted,
         long CategoryId
     );
-    
+
     [HttpPost("envelopes/{id:long}/edit")]
     [ValidateAntiForgeryToken]
     public IActionResult Edit(long id, EditEnvelopeDto dto)
@@ -146,7 +155,7 @@ WHERE id = @id
                 categoryId = dto.CategoryId
             }
         );
-        
+
         return Redirect("/envelopes");
     }
 
@@ -166,7 +175,7 @@ WHERE id = @id
         return Redirect("/envelopes");
     }
 
-    public Envelope FetchEnvelope(YearMonth yearMonth, long categoryId,  IDbConnection connection)
+    public Envelope FetchEnvelope(YearMonth yearMonth, long categoryId, IDbConnection connection)
     {
         return connection.Query<Envelope, Category, Envelope>(
             """
@@ -188,7 +197,7 @@ WHERE id = @id
             new { yearMonth = yearMonth, categoryId = categoryId }
         ).First();
     }
-    
+
     public Envelope FetchEnvelope(long id, IDbConnection connection)
     {
         return connection.Query<Envelope, Category, Envelope>(
@@ -211,13 +220,13 @@ WHERE id = @id
             new { id = id }
         ).First();
     }
-    
+
     private EnvelopeViewModel ForEnvelope(
         Fragment fragment,
         Envelope envelope,
         IDbConnection connection
     ) => EnvelopeViewModel.ForEnvelope(fragment, envelope, CategoriesController.FetchCategories(connection));
-    
+
     private EnvelopeViewModel ForEnvelopes(
         Fragment fragment,
         IEnumerable<Envelope> envelopes,
@@ -238,13 +247,13 @@ public record Envelope(long Id, YearMonth Month, decimal Budgeted, decimal Alloc
     {
     }
 
-    public static Envelope Empty = new ();
+    public static readonly Envelope Empty = new();
 }
 
 public record EnvelopeViewModel(Fragment FragmentId, EnvelopeView Envelope, IEnumerable<EnvelopeView> Envelopes, IEnumerable<Category> Categories)
 {
     public static EnvelopeViewModel ForEnvelope(Fragment fragmentId, Envelope envelope, IEnumerable<Category> categories)
-        => new (fragmentId, new EnvelopeView(envelope), Enumerable.Empty<EnvelopeView>(), categories);
+        => new(fragmentId, new EnvelopeView(envelope), Enumerable.Empty<EnvelopeView>(), categories);
     public static EnvelopeViewModel ForEnvelopes(Fragment fragmentId, IEnumerable<Envelope> envelopes, IEnumerable<Category> categories)
-        => new (fragmentId, new EnvelopeView(new Envelope()), envelopes.Select(x => new EnvelopeView(x)), categories);
+        => new(fragmentId, new EnvelopeView(new Envelope()), envelopes.Select(x => new EnvelopeView(x)), categories);
 }

@@ -18,7 +18,7 @@ public class DapperContext
     {
         _connectionString = configuration.GetConnectionString("DefaultConnection")!;
         _serverTiming = serverTiming;
-        
+
         DefaultTypeMap.MatchNamesWithUnderscores = true;
         SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
         SqlMapper.AddTypeHandler(new DateOnlyHandler());
@@ -33,7 +33,7 @@ public class DapperContext
         // var conn = new ServerTimingDbConnection(new SqliteConnection(_connectionString), _serverTiming);
         var conn = new SqliteConnection(_connectionString);
         conn.Open();
-        
+
         // enable foreign keys as they are not on by default
         // enable wal  for more performance: PRAGMA journal_mode = 'wal';
         // increase page size from defaults of 4096 for more performance
@@ -41,7 +41,7 @@ public class DapperContext
         conn.Execute("PRAGMA foreign_keys = ON; PRAGMA page_size = 8192;");
         return conn;
     }
-    
+
     public SqliteConnection CreateBulkInsertConnection()
     {
         var conn = new SqliteConnection(_connectionString);
@@ -62,6 +62,11 @@ CREATE TABLE IF NOT EXISTS account_types (
 ) STRICT ;
 
 CREATE TABLE IF NOT EXISTS budget_types (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS cleared_statuses (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL
 ) STRICT;
@@ -87,11 +92,6 @@ CREATE TABLE IF NOT EXISTS envelopes (
     category_id INTEGER NOT NULL,
      FOREIGN KEY (category_id) REFERENCES categories(id),
      UNIQUE (month, category_id)
-) STRICT;
-
-CREATE TABLE IF NOT EXISTS cleared_statuses (
-    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL
 ) STRICT;
 
 CREATE TABLE IF NOT EXISTS financial_transactions (
@@ -126,13 +126,15 @@ CREATE TABLE IF NOT EXISTS financial_transactions (
         connection.Open();
         var sql =
 """
---DROP TABLE IF EXISTS financial_transactions;
+DROP TABLE IF EXISTS financial_transactions_envelopes;
+DROP TABLE IF EXISTS financial_transactions;
+DROP TABLE IF EXISTS categories_envelopes;
 DROP TABLE IF EXISTS envelopes;
---DROP TABLE IF EXISTS categories;
---DROP TABLE IF EXISTS accounts;
---DROP TABLE IF EXISTS account_types;
---DROP TABLE IF EXISTS budget_types;
---DROP TABLE IF EXISTS cleared_statuses;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS accounts;
+DROP TABLE IF EXISTS budget_types;
+DROP TABLE IF EXISTS account_types;
+DROP TABLE IF EXISTS cleared_statuses;
 """;
         connection.Execute(sql);
         connection.Close();
@@ -142,22 +144,22 @@ DROP TABLE IF EXISTS envelopes;
     {
         using var connection = CreateBulkInsertConnection();
 
-        // ImportCsv(connection, "categories");
-        // ImportCsv(connection, "account_types");
-        // ImportCsv(connection, "budget_types");
-        // ImportCsv(connection, "cleared_statuses");
-        // ImportCsv(connection, "accounts");
+        ImportCsv(connection, "categories");
+        ImportCsv(connection, "account_types");
+        ImportCsv(connection, "budget_types");
+        ImportCsv(connection, "cleared_statuses");
+        ImportCsv(connection, "accounts");
         ImportCsv(connection, "envelopes");
 
         connection.Close();
     }
-    
+
     private static void ImportCsv(IDbConnection connection, string tableName)
     {
         var parameters = new List<IDbDataParameter>();
         using var transaction = connection.BeginTransaction();
         var command = connection.CreateCommand();
-        
+
         var isFirst = true;
         foreach (var line in File.ReadLines($"Import\\{tableName}.csv"))
         {
@@ -169,7 +171,7 @@ DROP TABLE IF EXISTS envelopes;
             else
             {
                 var parts = line.Split(',');
-                for (var i =0; i < parts.Length; i++)
+                for (var i = 0; i < parts.Length; i++)
                 {
                     parameters[i].Value = parts[i];
                 }

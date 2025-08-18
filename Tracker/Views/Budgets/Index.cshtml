@@ -31,12 +31,12 @@
         {
             <tr>
                 <th scope="row">
-                    <span hx-action="@Url.Action("InlineEditName", "Categories", new { Id = row.Category.Id })" hx-trigger="click" hx-swap="outerHTML">
+                    <span>@row.Category.Name</span>
+                    @* <span hx-action="@Url.Action("InlineEditName", "Categories", new { Id = row.Category.Id })" hx-trigger="click" hx-swap="outerHTML">
                         @row.Category.Name
-                    </span>
+                    </span> *@
                 </th>
                 <td>
-                    <partial name="/Views/Envelope/InlineAmountEditor.cshtml" model="(row.Id, row.Budgeted)" />
                 </td>
                 <td>@row.Allocated</td>
                 <td>@row.Balance</td>
