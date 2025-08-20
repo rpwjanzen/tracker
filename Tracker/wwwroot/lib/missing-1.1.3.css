@@ -1389,8 +1389,8 @@ button.iconbutton[aria-pressed="true"] {
   --line-length: 40rem;
   --border-radius: .2rem;
   --main-font: "Source Sans 3", "Source Sans Pro", -apple-system, system-ui, sans-serif;
-  --secondary-font: serif; /* var(--main-font);  customized*/
-  --display-font: fantasy; /* var(--secondary-font); customized*/
+  --secondary-font: var(--main-font);
+  --display-font: var(--secondary-font);
   --mono-font: "M Plus Code Latin", monospace, monospace;
   --density: 1;
   --full-width: 100vw;
