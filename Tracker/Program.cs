@@ -72,10 +72,12 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// HTTPS? LOL.
+//app.UseHttpsRedirection();
 app.UseRouting();
 
-app.UseAuthorization();
+// SECURITY? LOL.
+//app.UseAuthorization();
 
 app.UseStaticFiles();
 app.MapStaticAssets();
